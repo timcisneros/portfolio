@@ -1,4 +1,10 @@
 /*! Devices.css v0.1.16 | MIT License | github.com/picturepan2/devices.css */
+
+.centered {
+    display: flex;
+    justify-content: center;
+}
+
 .device,
 .device::before,
 .device::after,
@@ -14,8 +20,6 @@
     transform: scale(0.7);
     z-index: 1;
     margin-top: -100px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .device .device-frame {
@@ -1396,4 +1400,11 @@
     right: 0;
     top: 50%;
     width: 6px;
+}
+
+@media only screen and (max-width: 400px) {
+    .device {
+        margin-top: -150px;
+        transform: scale(0.6);
+    }
 }

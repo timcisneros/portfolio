@@ -40,7 +40,7 @@ const AboutMe = () => {
                 <div className="container">
                     <div className="columns">
                         <div className="column">
-                            <div className="card p-5">
+                            <div className="box p-5">
                                 <div className="title has-text-centered">
                                     <FontAwesomeIcon
                                         className="fa-3x"
@@ -64,7 +64,7 @@ const AboutMe = () => {
                             </div>
                         </div>
                         <div className="column">
-                            <div className="card p-5">
+                            <div className="box p-5">
                                 <div className="title has-text-centered">
                                     <FontAwesomeIcon
                                         className="fa-3x"
@@ -87,7 +87,7 @@ const AboutMe = () => {
                             </div>
                         </div>
                         <div className="column">
-                            <div className="card p-5">
+                            <div className="box p-5">
                                 <div className="title has-text-centered">
                                     <FontAwesomeIcon
                                         className="fa-3x"
@@ -115,7 +115,7 @@ const AboutMe = () => {
 
             <section className="section">
                 <div className="container is-max-desktop">
-                    <div className="card p-5">
+                    <div className="box p-5">
                         <article className="media">
                             <figure className="media-left">
                                 <p className="image is-128x128">

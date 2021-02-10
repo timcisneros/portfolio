@@ -21,35 +21,37 @@ function Home() {
                             </a>
                         </Link>
                     </div>
-                    <a
-                        href="https://next-js-news.vercel.app/"
-                        target="_blank"
-                        className="device device-iphone-x"
-                    >
-                        <div className="device-frame">
-                            <video
-                                autoPlay
-                                muted
-                                loop
-                                className="device-content"
-                            >
-                                <source
-                                    src="/videos/iphone.mp4"
-                                    type="video/mp4"
-                                />
-                                <source
-                                    src="/videos/iphone.webm"
-                                    type="video/webm"
-                                />
-                                Your browser is not supported!
-                            </video>
-                        </div>
-                        <div className="device-stripe"></div>
-                        <div className="device-header"></div>
-                        <div className="device-sensors"></div>
-                        <div className="device-btns"></div>
-                        <div className="device-power"></div>
-                    </a>
+                    <div className="centered">
+                        <a
+                            href="https://next-js-news.vercel.app/"
+                            target="_blank"
+                            className="device device-iphone-x"
+                        >
+                            <div className="device-frame">
+                                <video
+                                    autoPlay
+                                    muted
+                                    loop
+                                    className="device-content"
+                                >
+                                    <source
+                                        src="/videos/iphone.mp4"
+                                        type="video/mp4"
+                                    />
+                                    <source
+                                        src="/videos/iphone.webm"
+                                        type="video/webm"
+                                    />
+                                    Your browser is not supported!
+                                </video>
+                            </div>
+                            <div className="device-stripe"></div>
+                            <div className="device-header"></div>
+                            <div className="device-sensors"></div>
+                            <div className="device-btns"></div>
+                            <div className="device-power"></div>
+                        </a>
+                    </div>
                 </div>
             </section>
         </MainLayout>
