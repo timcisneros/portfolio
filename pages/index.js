@@ -29,8 +29,9 @@ function Home() {
                         >
                             <div className="device-frame">
                                 <video
-                                    autoPlay
                                     muted
+                                    autoPlay
+                                    playsInline
                                     loop
                                     className="device-content"
                                 >
