@@ -1,65 +1,59 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React from 'react';
+import Link from 'next/link';
 
-export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+import MainLayout from '../components/layouts/MainLayout';
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+function Home() {
+    return (
+        <MainLayout>
+            <section className="section">
+                <div className="container">
+                    <h3 className="title has-text-centered is-3">
+                        Tim Cisneros
+                    </h3>
+                    <h4 className="subtitle has-text-centered is-5">
+                        {'React & Next.js Developer'}
+                    </h4>
+                    <div className="has-text-centered">
+                        <Link href="/projects">
+                            <a className="button is-text">
+                                See Projects &rarr;
+                            </a>
+                        </Link>
+                    </div>
+                    <a
+                        href="https://next-js-news.vercel.app/"
+                        target="_blank"
+                        className="device device-iphone-x"
+                    >
+                        <div className="device-frame">
+                            <video
+                                autoPlay
+                                muted
+                                loop
+                                className="device-content"
+                            >
+                                <source
+                                    src="/videos/iphone.mp4"
+                                    type="video/mp4"
+                                />
+                                <source
+                                    src="/videos/iphone.webm"
+                                    type="video/webm"
+                                />
+                                Your browser is not supported!
+                            </video>
+                        </div>
+                        <div className="device-stripe"></div>
+                        <div className="device-header"></div>
+                        <div className="device-sensors"></div>
+                        <div className="device-btns"></div>
+                        <div className="device-power"></div>
+                    </a>
+                </div>
+            </section>
+        </MainLayout>
+    );
 }
+
+export default Home;
