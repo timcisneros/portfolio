@@ -69,12 +69,6 @@ const Projects = () => {
                                                 <p className="subtitle is-6">
                                                     {project.description}
                                                 </p>
-                                                <p>
-                                                    {`Last Push: ${dateFormat(
-                                                        project.updated_at,
-                                                        'mmm dd, yyyy'
-                                                    )}`}
-                                                </p>
                                             </div>
                                             {project.language && (
                                                 <div className="card-content">
