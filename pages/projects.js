@@ -1,7 +1,6 @@
 import React from 'react';
 import { QueryClient, useQuery } from 'react-query';
 import { dehydrate } from 'react-query/hydration';
-import dateFormat from 'dateformat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 
