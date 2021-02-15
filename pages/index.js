@@ -36,7 +36,7 @@ function Home() {
                                     className="device-content"
                                 >
                                     <source
-                                        src="/videos/iphone.mp4"
+                                        src="/videos/iphone_compressed.mp4"
                                         type="video/mp4"
                                     />
                                     <source
