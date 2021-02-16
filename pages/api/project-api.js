@@ -12,6 +12,14 @@ export const fetchLanguages = async (repo) => {
     return data;
 };
 
+export const fetchReadme = async (repo) => {
+    const res = await fetch(
+        'https://raw.githubusercontent.com/timcisneros/next-news/main/README.md'
+    );
+    const data = res.json();
+    return data;
+};
+
 export const fetchDeployments = async (projects) => {
     let urls = [];
     projects.forEach((project) =>

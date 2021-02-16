@@ -6,6 +6,7 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 
 import { fetchProjects } from './api/project-api';
 import MainLayout from '../components/layouts/MainLayout';
+import ProjectImage from '../components/ProjectImage';
 
 export async function getStaticProps() {
     const queryClient = new QueryClient();
@@ -55,9 +56,8 @@ const Projects = () => {
                                     >
                                         <div className="card">
                                             <div className="card-image has-text-centered">
-                                                <img
-                                                    src={`/project-imgs/github.png`}
-                                                    alt=""
+                                                <ProjectImage
+                                                    project={project}
                                                 />
                                             </div>
                                             <div className="card-content">
