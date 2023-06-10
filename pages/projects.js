@@ -3,6 +3,7 @@ import { QueryClient, useQuery } from 'react-query';
 import { dehydrate } from 'react-query/hydration';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { faPlayCircle } from '@fortawesome/free-regular-svg-icons';
 
 import { fetchProjects } from './api/project-api';
 import MainLayout from '../components/layouts/MainLayout';
@@ -98,6 +99,22 @@ const Projects = () => {
                                                         Code
                                                     </a>
                                                 </p>
+                                                {project.homepage && (
+                                                    <p className="card-footer-item">
+                                                        <a
+                                                            href={`https://${project.homepage}`}
+                                                            target="_blank"
+                                                            className="has-text-grey"
+                                                        >
+                                                            <FontAwesomeIcon
+                                                                icon={
+                                                                    faPlayCircle
+                                                                }
+                                                            />{' '}
+                                                            Demo
+                                                        </a>
+                                                    </p>
+                                                )}
                                             </footer>
                                         </div>
                                     </div>
