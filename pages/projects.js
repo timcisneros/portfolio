@@ -102,7 +102,9 @@ const Projects = () => {
                                                 {project.homepage && (
                                                     <p className="card-footer-item">
                                                         <a
-                                                            href={`https://${project.homepage}`}
+                                                            href={
+                                                                project.homepage
+                                                            }
                                                             target="_blank"
                                                             className="has-text-grey"
                                                         >
