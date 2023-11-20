@@ -15,10 +15,8 @@ function Home() {
                         {'React & Next.js Developer'}
                     </h4>
                     <div className="has-text-centered">
-                        <Link href="/projects">
-                            <a className="button is-text">
-                                See Projects &rarr;
-                            </a>
+                        <Link href="/projects" className="button is-text">
+                            See Projects &rarr;
                         </Link>
                     </div>
                     <div className="centered">
