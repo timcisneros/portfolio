@@ -1,0 +1,13 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch({ executablePath: '/usr/bin/chromium-browser' });
+const p = await b.newPage();
+p.on('pageerror', e => console.log('PAGEERROR:', e.message));
+p.on('console', m => { if (m.type()==='error') console.log('CONSOLE.ERR:', m.text()); });
+await p.goto('http://localhost:3987', { waitUntil:'networkidle' });
+await p.evaluate(() => { globalThis.__TW_FORCE = 'g'; });
+await p.waitForTimeout(9000);
+console.log('after force g:', await p.locator('h1').evaluate(e=>e.innerText.replace(/\n/g,' ')));
+await p.evaluate(() => { globalThis.__TW_FORCE = 'q'; });
+await p.waitForTimeout(12000);
+console.log('after force q:', await p.locator('h1').evaluate(e=>e.innerText.replace(/\n/g,' ')));
+await b.close();
