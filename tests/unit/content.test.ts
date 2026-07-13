@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import {
     featuredProjects,
     systemsProjects,
+    leadProjects,
+    supportingProjects,
     moreProjects,
+    skills,
 } from '../../data/projects';
 import { caseStudies } from '../../data/caseStudies';
 
@@ -56,6 +59,7 @@ describe('project content integrity', () => {
             expect(project.code).toMatch(/^https:\/\/github\.com\//);
         }
         for (const study of caseStudies) {
+            expect(study.employerValue.length).toBeGreaterThan(20);
             expect(study.intro.length).toBeGreaterThan(0);
             expect(study.steps.length).toBeGreaterThan(0);
             expect(study.build.length).toBeGreaterThan(0);
@@ -63,6 +67,30 @@ describe('project content integrity', () => {
                 expect(step.imageAlt.length).toBeGreaterThan(10);
             }
         }
+    });
+
+    it('leads with professional and systems evidence before supporting work', () => {
+        expect(leadProjects.map((project) => project.id)).toEqual([
+            'dsdebug',
+            'my-youtube',
+            'ticket-system',
+        ]);
+        expect(supportingProjects.map((project) => project.id)).toEqual([
+            'action-plan',
+            'waydaw',
+        ]);
+    });
+
+    it('qualifies skill depth and avoids production AI claims', () => {
+        for (const group of skills) {
+            expect(group.level.length).toBeGreaterThan(0);
+            expect(group.description.length).toBeGreaterThan(20);
+        }
+        const labels = skills.flatMap((group) => group.items);
+        expect(labels).toContain('OpenAI API prototyping');
+        expect(labels).toContain('Eval & benchmark implementation');
+        expect(labels).not.toContain('Production AI integration');
+        expect(labels).not.toContain('Agent orchestration');
     });
 
     it('the served resume PDF exists', () => {

@@ -1,9 +1,60 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
+import {
+    TrajectoryMemory,
+    weightedChoice,
+    type HeadlineQuality,
+} from '../lib/headline/engine';
+import { lowerSubject, thirdPerson } from '../lib/headline/grammar';
+import {
+    renderConstruction,
+    renderOutcomeChain,
+    type OutcomeChain,
+} from '../lib/headline/constructions';
+import { compileHeadlineManifest } from '../lib/headline/manifest';
+import { HeadlineEditRuntime } from '../lib/headline/runtime';
+import {
+    HeadlineBehaviorPolicy,
+    timingDelay,
+    type TimingProfile,
+} from '../lib/headline/policy';
+import {
+    type FormattingAffinity,
+    nextGraphemeBoundary,
+    normalizeGraphemeRange,
+    previousGraphemeBoundary,
+    transformFormattedDelete,
+    transformFormattedInsert,
+} from '../lib/headline/text';
+import {
+    CaretAnchorMemory,
+    planSemanticPath,
+    type CaretAnchorSlot,
+    type CaretNavigationMode,
+} from '../lib/headline/path';
+import {
+    CompositeEditPlanner,
+    compileCompositeEditOperations,
+    compileTextEditOperations,
+    diffTextRevision,
+    EditStrategyPlanner,
+    planCoordinatedRevision,
+    simulateEditTransaction,
+    type WordEditChoreography,
+    type EditOperation,
+} from '../lib/headline/edits';
+import {
+    NarrativePlanner,
+    analyzeRelationGraph,
+    type ConstructionFamily,
+    type Energy,
+    type HeadlineDomain,
+    type TrajectoryCandidate,
+} from '../lib/headline/planner';
 
 // The hero headline drafts itself live, like someone editing it in place. It
 // works in two forms and occasionally rewrites from one to the other:
 //   statement — "<noun> <connector> <verb> for <object>"  ("Software that works for you")
-//   question  — "What <modal> <noun> do for <object>?"    ("What could code do for orgs?")
+//   question  — "<Modal> <noun> <verb> <object>?"         ("Could APIs connect your product?")
 // Every content word is an independent, swappable slot; each cycle the caret
 // clicks onto one word and rewrites it. Grammar stays correct: a statement
 // verb keeps its "s" only for a singular subject joined by "that" ("Software
@@ -77,13 +128,15 @@ const NOUNS = [
     { word: 'Devtools', plural: true },
     { word: 'Consoles', plural: true },
     { word: 'Command centers', plural: true },
+    { word: 'Visualizations', plural: true },
 ];
 const CONNECTORS = [
     'that',
     'can',
     'could',
 ];
-const MODALS = ['could', 'can'];
+const MODALS = ['Could', 'How could', 'How might', 'Where could'];
+const modalText = (idx: number) => MODALS[idx];
 // Each verb declares which links it accepts before the object: " for " (works
 // for you), " " for a direct object (helps you), or both (serves you / serves
 // for you). The first listed link is its default.
@@ -114,6 +167,7 @@ type ObjectKind =
 type HeadlineObject = { text: string; kinds: ObjectKind[] };
 type HeadlineVerb = {
     base: string;
+    past?: string;
     links: string[];
     subjectKinds?: SubjectKind[];
     objectKinds?: ObjectKind[];
@@ -179,27 +233,24 @@ const SUBJECT_KINDS: SubjectKind[][] = [
     ['tool', 'technical'],
     ['interface', 'technical'],
     ['ops', 'workflow'],
+    ['data', 'interface'],
 ];
 
 const VERBS: HeadlineVerb[] = [
     { base: 'work', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
-    { base: 'adapt', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
     { base: 'serve', links: [TO], objectKinds: ['audience', 'business'] },
     { base: 'help', links: [TO], objectKinds: ['audience', 'business', 'workflow'] },
     { base: 'support', links: [TO], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
     { base: 'empower', links: [TO], objectKinds: ['audience', 'business'] },
     { base: 'protect', links: [TO], objectKinds: ['audience', 'business', 'technical'] },
     { base: 'connect', links: [TO], objectKinds: ['audience', 'business', 'technical', 'workflow'] },
-    { base: 'free', links: [TO], objectKinds: ['audience', 'business'] },
-    { base: 'back', links: [TO], objectKinds: ['audience', 'business'] },
-    { base: 'build', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
     { base: 'prepare', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'outcome'] },
-    { base: 'equip', links: [TO], objectKinds: ['audience', 'business'] },
+    { base: 'equip', past: 'equipped', links: [TO], objectKinds: ['audience', 'business'] },
     { base: 'save', links: [TO], objectKinds: ['abstract'] },
     { base: 'simplify', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
     { base: 'clarify', links: [TO], objectKinds: ['workflow', 'outcome', 'abstract'] },
     { base: 'automate', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
-    { base: 'debug', links: [TO], objectKinds: ['workflow', 'technical'] },
+    { base: 'debug', past: 'debugged', links: [TO], objectKinds: ['workflow', 'technical'] },
     { base: 'organize', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
     { base: 'route', links: [TO], objectKinds: ['workflow', 'abstract'] },
     { base: 'sync', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
@@ -210,7 +261,7 @@ const VERBS: HeadlineVerb[] = [
     { base: 'measure', links: [TO], objectKinds: ['outcome', 'technical', 'abstract'] },
     { base: 'surface', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
     { base: 'reconcile', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
-    { base: 'review', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
+    { base: 'generate', links: [TO], objectKinds: ['outcome'] },
 ];
 const OBJECTS: HeadlineObject[] = [
     { text: 'you', kinds: ['human', 'audience'] },
@@ -251,14 +302,20 @@ const OBJECTS: HeadlineObject[] = [
     { text: 'approvals', kinds: ['business', 'workflow'] },
     { text: 'requests', kinds: ['business', 'workflow'] },
     { text: 'records', kinds: ['business', 'technical'] },
+    { text: 'complex workflows', kinds: ['workflow', 'technical'] },
+    { text: 'real-time updates', kinds: ['workflow', 'abstract'] },
+    { text: 'field data', kinds: ['business', 'technical'] },
+    { text: 'field reports', kinds: ['outcome'] },
+    { text: 'workflow state', kinds: ['workflow', 'technical'] },
+    { text: 'operational metrics', kinds: ['business', 'technical', 'abstract'] },
 ];
 const PUNCTS = ['.', '!'];
 
 // Emojis that fit each noun / verb / object, so a garnish is contextual rather
 // than random. Aligned by index with NOUNS, VERBS, and OBJECTS above.
-const NOUN_EMOJI = ['💻', '🖥️', '🧩', '💡', '🛠️', '📱', '⌨️', '🤖', '📊', '🔀', '🕵️', '🔧', '📜', '📦', '🧱', '🧠', '🗂️', '🔗', '🌐', '🤖', '🛎️', '🔑', '✨', '🎨', '🖱️', '🧪', '📉', '📄', '💬', '🗄️', '🏗️', '🕸️', '🔍', '🔌', '🔲', '🪝', '🚪', '🏪', '🌊', '🧰', '🏛️', '🎛️', '🤵', '🔌', '🗄️', '🖥️', '🎛️', '🧰', '🛠️', '📋', '📝', '📥', '🗓️', '📥', '🧾', '🔎', '🧰', '🖥️', '🕹️'];
-const VERB_EMOJI = ['✅', '🔄', '🤝', '🤲', '🫶', '💪', '🛡️', '🔗', '🔓', '🕊️', '🙌', '🏗️', '🧰', '⏱️', '✂️', '🔍', '⚙️', '🧪', '🗂️', '🔀', '🔄', '✅', '📉', '🧭', '📡', '📏', '🔎', '🔁', '✅'];
-const OBJ_EMOJI = ['🙌', '👥', '🏢', '💚', '🛒', '🙋', '💻', '👥', '👤', '💼', '🤝', '🚀', '🌱', '🎨', '🔀', '🛍️', '🗺️', '📦', '🚀', '🔀', '🔮', '⏱️', '✂️', '🧭', '⚙️', '🔀', '🗄️', '🧱', '🔀', '🎧', '🧪', '⏳', '⚠️', '🧩', '📡', '✅', '📬', '🗃️'];
+const NOUN_EMOJI = ['💻', '🖥️', '🧩', '💡', '🛠️', '📱', '⌨️', '🤖', '📊', '🔀', '🕵️', '🔧', '📜', '📦', '🧱', '🧠', '🗂️', '🔗', '🌐', '🤖', '🛎️', '🔑', '✨', '🎨', '🖱️', '🧪', '📉', '📄', '💬', '🗄️', '🏗️', '🕸️', '🔍', '🔌', '🔲', '🪝', '🚪', '🏪', '🌊', '🧰', '🏛️', '🎛️', '🤵', '🔌', '🗄️', '🖥️', '🎛️', '🧰', '🛠️', '📋', '📝', '📥', '🗓️', '📥', '🧾', '🔎', '🧰', '🖥️', '🕹️', '📈'];
+const VERB_EMOJI = ['✅', '🤝', '🤲', '🫶', '💪', '🛡️', '🔗', '🏗️', '🧰', '⏱️', '✂️', '🔍', '⚙️', '🧪', '🗂️', '🔀', '🔄', '✅', '📉', '🧭', '📡', '📏', '🔎', '🔁', '🧾'];
+const OBJ_EMOJI = ['🙌', '👥', '🏢', '💚', '🛒', '🙋', '💻', '👥', '👤', '💼', '🤝', '🚀', '🌱', '🎨', '🔀', '🛍️', '🗺️', '📦', '🚀', '🔀', '🔮', '⏱️', '✂️', '🧭', '⚙️', '🔀', '🗄️', '🧱', '🔀', '🎧', '🧪', '⏳', '⚠️', '🧩', '📡', '✅', '📬', '🗃️', '🕸️', '📣', '📋', '🧾', '🔍', '📊'];
 const EXTRA_EMOJI = ['✨', '💡', '⭐', '🔥'];
 
 const objectText = (idx: number) => OBJECTS[idx].text;
@@ -325,13 +382,11 @@ const HUMAN_JUDGMENT_SUPPORT_VERBS = new Set([
 ]);
 const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
     approvals: new Set([
-        'automate',
         'clarify',
         'organize',
         'reconcile',
         'review',
         'route',
-        'surface',
         'validate',
     ]),
     bottlenecks: new Set([
@@ -359,6 +414,13 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
         'surface',
         'trace',
     ]),
+    'field data': new Set([
+        'clarify',
+        'organize',
+    ]),
+    'field reports': new Set([
+        'generate',
+    ]),
     handoffs: new Set([
         'automate',
         'clarify',
@@ -378,11 +440,23 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
         'support',
         'surface',
     ]),
+    'operational metrics': new Set([
+        'clarify',
+        'measure',
+        'monitor',
+        'surface',
+    ]),
     patterns: new Set([
         'clarify',
         'measure',
         'surface',
         'trace',
+    ]),
+    'real-time updates': new Set([
+        'surface',
+    ]),
+    'complex workflows': new Set([
+        'clarify',
     ]),
     'your launch': new Set([
         'clarify',
@@ -445,6 +519,12 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
     signals: new Set([
         'clarify',
         'measure',
+        'monitor',
+        'surface',
+        'trace',
+    ]),
+    'workflow state': new Set([
+        'clarify',
         'monitor',
         'surface',
         'trace',
@@ -514,42 +594,16 @@ const verbAllowsObject = (verbIdx: number, objIdx: number) => {
 const subjectKinds = (idx: number) => SUBJECT_KINDS[idx] ?? ['software'];
 const subjectMatches = (nounIdx: number, allowed: SubjectKind[]) =>
     subjectKinds(nounIdx).some((kind) => allowed.includes(kind));
-const subjectAllowsObject = (nounIdx: number, objIdx: number) =>
-    SUBJECT_OBJECT_ALLOWLIST[NOUNS[nounIdx].word]?.has(objectText(objIdx)) ?? true;
-const QUESTION_SUBJECT_BLOCKLIST = new Set([
-    'Ideas',
-    'Services',
-    'Solutions',
-    'Experiences',
-    'Tech',
-    'Features',
-    'Insights',
-    'Modules',
-    'Plugins',
-]);
-const QUESTION_PAIRS = [
-    ['Automation', 'your workflow'],
-    ['Automation', 'busywork'],
-    ['Dashboards', 'your business'],
-    ['Dashboards', 'decision context'],
-    ['Internal tools', 'your team'],
-    ['Internal tools', 'operations'],
-    ['APIs', 'your product'],
-    ['APIs', 'your data'],
-    ['Workbenches', 'your workflow'],
-    ['Admin panels', 'operations'],
-    ['Search tools', 'records'],
-    ['Devtools', 'your stack'],
-    ['Devtools', 'errors'],
-    ['Queues', 'requests'],
-    ['Parsers', 'records'],
-    ['Integrations', 'your workflows'],
-    ['Reports', 'decision context'],
-    ['Analytics', 'signals'],
-    ['Forms', 'approvals'],
-    ['Command centers', 'operations'],
-] as const;
-const PHRASE_PROMPTS = [
+const domainForNoun = (nounIdx: number): HeadlineDomain => {
+    const kinds = subjectKinds(nounIdx);
+    if (kinds.includes('automation')) return 'automation';
+    if (kinds.includes('data')) return 'data';
+    if (kinds.includes('workflow') || kinds.includes('ops')) return 'operations';
+    if (kinds.includes('interface')) return 'experience';
+    if (kinds.includes('business') || kinds.includes('concept')) return 'product';
+    return 'developer';
+};
+const STATIC_PHRASE_PROMPTS = [
     {
         line1: 'Less busywork.',
         line2: 'More time for your team.',
@@ -582,33 +636,194 @@ const PHRASE_PROMPTS = [
         line1: 'Dashboards',
         line2: 'that clarify the next step.',
     },
+    {
+        line1: 'Turn field data',
+        line2: 'into reports crews can use.',
+    },
+    {
+        line1: 'Make complex workflows',
+        line2: 'easier to explain.',
+    },
+    {
+        line1: 'Operational metrics',
+        line2: 'made visible in real time.',
+    },
 ] as const;
-const SUBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
-    Forms: new Set(['automate', 'clarify', 'organize', 'route', 'validate']),
-    Schedulers: new Set(['automate', 'organize', 'route', 'simplify']),
-    Queues: new Set(['automate', 'organize', 'reduce', 'route', 'surface']),
-    Parsers: new Set(['clarify', 'organize', 'surface', 'sync', 'validate']),
-    Importers: new Set(['organize', 'sync', 'validate']),
-    Plugins: new Set(['connect', 'support']),
-    Widgets: new Set(['clarify', 'surface', 'support']),
-    Consoles: new Set(['clarify', 'debug', 'monitor', 'surface', 'trace']),
+type Quality = HeadlineQuality;
+type SubjectCapability = { verbs: string[]; objects: string[]; quality: Quality };
+const capability = (
+    verbs: string[],
+    objects: string[],
+    quality: Quality = 'strong'
+): SubjectCapability => ({ verbs, objects, quality });
+const ROLE_MANIFEST = compileHeadlineManifest({
+    subjects: [
+        {
+            id: 'APIs',
+            capabilities: ['connect-systems', 'sync-data', 'support-product'],
+        },
+        {
+            id: 'Dashboards',
+            capabilities: ['reveal-decisions', 'monitor-operations'],
+        },
+        {
+            id: 'Forms',
+            capabilities: ['organize-input', 'route-governance', 'validate-data'],
+        },
+        {
+            id: 'Search tools',
+            capabilities: ['organize-information', 'reveal-information'],
+        },
+    ],
+    verbs: [
+        { id: 'connect', capability: 'connect-systems', objectRoles: ['product', 'infrastructure'] },
+        { id: 'sync', capability: 'sync-data', objectRoles: ['data'] },
+        { id: 'support', capability: 'support-product', objectRoles: ['product'] },
+        { id: 'clarify', capability: 'reveal-decisions', objectRoles: ['decision-support'] },
+        { id: 'surface', capability: 'reveal-decisions', objectRoles: ['decision-support'] },
+        { id: 'measure', capability: 'monitor-operations', objectRoles: ['operations', 'decision-support'] },
+        { id: 'monitor', capability: 'monitor-operations', objectRoles: ['operations', 'decision-support'] },
+        { id: 'organize', capability: 'organize-input', objectRoles: ['workflow', 'data'] },
+        { id: 'route', capability: 'route-governance', objectRoles: ['workflow'] },
+        { id: 'validate', capability: 'validate-data', objectRoles: ['data'] },
+        { id: 'organize', capability: 'organize-information', objectRoles: ['information'] },
+        { id: 'clarify', capability: 'reveal-information', objectRoles: ['information'] },
+        { id: 'surface', capability: 'reveal-information', objectRoles: ['information'] },
+    ],
+    objects: [
+        { id: 'your product', roles: ['product'] },
+        { id: 'your stack', roles: ['infrastructure'] },
+        { id: 'your data', roles: ['data', 'information'] },
+        { id: 'records', roles: ['data', 'information'] },
+        { id: 'patterns', roles: ['decision-support', 'information'] },
+        { id: 'signals', roles: ['decision-support'] },
+        { id: 'decision context', roles: ['decision-support'] },
+        { id: 'your next step', roles: ['decision-support'] },
+        { id: 'bottlenecks', roles: ['decision-support'] },
+        { id: 'operations', roles: ['operations'] },
+        { id: 'requests', roles: ['workflow'] },
+        { id: 'approvals', roles: ['workflow'] },
+    ],
+});
+const inheritedCapabilities = (subject: string): SubjectCapability[] => {
+    const grouped = new Map<string, string[]>();
+    for (const relation of ROLE_MANIFEST.relations.filter(
+        (candidate) => candidate.subject === subject
+    )) {
+        grouped.set(relation.verb, [
+            ...new Set([...(grouped.get(relation.verb) ?? []), relation.object]),
+        ]);
+    }
+    return [...grouped].map(([verb, objects]) => capability([verb], objects));
 };
-const SUBJECT_OBJECT_ALLOWLIST: Record<string, Set<string>> = {
-    Forms: new Set(['approvals', 'requests', 'records', 'your data']),
-    Schedulers: new Set(['handoffs', 'operations', 'requests', 'your workflows']),
-    Queues: new Set(['handoffs', 'requests', 'your pipeline', 'your workflows']),
-    Parsers: new Set(['records', 'your data']),
-    Importers: new Set(['records', 'your data']),
-    APIs: new Set(['your data', 'your product', 'your stack']),
-    Plugins: new Set(['your product', 'your stack']),
-    Widgets: new Set(['decision context', 'signals', 'your product']),
-    Consoles: new Set(['errors', 'operations', 'signals', 'your stack']),
+// Capabilities bind actions to their compatible outcomes. A subject can have
+// several capabilities without gaining the Cartesian product between them.
+const SUBJECT_CAPABILITIES: Record<string, SubjectCapability[]> = {
+    Software: [capability(['serve', 'support', 'work'], ['you', 'teams', 'orgs', 'users', 'your business', 'your team', 'your users']), capability(['simplify'], ['busywork', 'operations', 'your workflow']), capability(['empower'], ['teams', 'your team'])],
+    Systems: [capability(['serve', 'support', 'work'], ['teams', 'your business', 'your team']), capability(['support'], ['your pipeline']), capability(['connect'], ['your product', 'your stack']), capability(['organize', 'simplify'], ['operations', 'your workflow'])],
+    Programs: [capability(['help', 'serve', 'support', 'work'], ['people', 'teams', 'users', 'your team', 'your users'])],
+    Ideas: [capability(['clarify', 'prepare'], ['your launch', 'your next step', 'your roadmap'])],
+    Tools: [capability(['help', 'support', 'work'], ['developers', 'teams', 'users', 'your team', 'your users']), capability(['simplify'], ['busywork', 'your workflow']), capability(['generate'], ['field reports']), capability(['empower'], ['developers', 'teams', 'your team'])],
+    Apps: [capability(['help', 'serve', 'support', 'work'], ['customers', 'people', 'users', 'your customers', 'your users']), capability(['simplify'], ['your workflow']), capability(['organize'], ['field data']), capability(['generate'], ['field reports'])],
+    Code: [capability(['support'], ['your product', 'your stack']), capability(['simplify'], ['your workflow']), capability(['protect'], ['your data'])],
+    Automation: [capability(['automate', 'reduce', 'simplify'], ['busywork', 'handoffs', 'your workflow']), capability(['organize'], ['operations', 'requests']), capability(['save'], ['time'])],
+    Data: [capability(['clarify', 'surface'], ['decision context', 'patterns', 'signals'])],
+    Workflows: [capability(['clarify', 'organize', 'simplify'], ['handoffs', 'operations', 'your workflow']), capability(['reduce'], ['busywork'])],
+    Agents: [capability(['help', 'support'], ['developers', 'support teams', 'users', 'your users']), capability(['organize'], ['requests'])],
+    Scripts: [capability(['automate', 'simplify'], ['busywork', 'your workflow']), capability(['organize', 'validate'], ['records', 'your data'])],
+    Platforms: [capability(['serve', 'support'], ['customers', 'teams', 'users', 'your business', 'your customers', 'your users']), capability(['connect'], ['your product', 'your stack'])],
+    Models: [capability(['help', 'support', 'work'], ['developers', 'users', 'your team', 'your users']), capability(['clarify', 'surface'], ['patterns', 'signals', 'your data'])],
+    Integrations: [capability(['connect', 'sync'], ['your data', 'your product', 'your stack', 'your workflows']), capability(['simplify'], ['handoffs', 'your workflow'])],
+    Services: [capability(['serve', 'support'], ['clients', 'customers', 'teams', 'your business', 'your customers', 'your team', 'your users'], 'supporting')],
+    Solutions: [capability(['clarify', 'support'], ['operations', 'startups', 'your business', 'your product', 'your workflow']), capability(['simplify'], ['busywork', 'handoffs'])],
+    Experiences: [capability(['help', 'serve'], ['customers', 'people', 'users', 'your customers', 'your users'], 'exploratory')],
+    Interfaces: [capability(['clarify', 'simplify'], ['operations', 'requests', 'your workflow']), capability(['clarify'], ['complex workflows', 'workflow state']), capability(['serve', 'support'], ['customers', 'users', 'your users'])],
+    Prototypes: [capability(['clarify', 'prepare'], ['your launch', 'your next step', 'your product'])],
+    Analytics: [capability(['clarify', 'surface'], ['decision context', 'operational metrics', 'patterns', 'signals']), capability(['measure'], ['operational metrics', 'signals', 'your business', 'your data'])],
+    Infrastructure: [capability(['protect', 'support'], ['your data', 'your product', 'your stack']), capability(['monitor'], ['operations', 'signals'])],
+    Networks: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['monitor', 'trace'], ['signals'])],
+    Insights: [capability(['clarify', 'support'], ['decision context', 'your business', 'your next step']), capability(['surface'], ['patterns', 'signals'])],
+    Tech: [capability(['serve', 'support', 'work'], ['people', 'teams', 'your business', 'your team']), capability(['empower'], ['people', 'teams', 'your team'])],
+    APIs: inheritedCapabilities('APIs'),
+    Backends: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['organize'], ['operations', 'requests']), capability(['sync', 'validate'], ['records', 'your data'])],
+    Bots: [capability(['help', 'support'], ['customers', 'support teams', 'users', 'your customers', 'your users'])],
+    Chatbots: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['support'], ['support teams', 'requests'])],
+    Dashboards: [...inheritedCapabilities('Dashboards'), capability(['measure', 'surface'], ['operational metrics']), capability(['clarify', 'surface'], ['workflow state']), capability(['surface'], ['real-time updates'])],
+    Databases: [capability(['organize', 'protect', 'reconcile', 'sync', 'validate'], ['records', 'your data'])],
+    Devtools: [capability(['clarify', 'debug', 'monitor', 'trace', 'validate'], ['edge cases', 'errors', 'your stack'])],
+    Features: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['support'], ['your product'])],
+    Flows: [capability(['clarify', 'organize', 'simplify'], ['handoffs', 'operations', 'your workflow']), capability(['reduce'], ['busywork'])],
+    Forms: [...inheritedCapabilities('Forms'), capability(['organize'], ['field data'])],
+    'Internal tools': [capability(['automate', 'reduce', 'simplify'], ['busywork', 'handoffs', 'your workflow']), capability(['clarify'], ['complex workflows', 'operations', 'requests', 'workflow state']), capability(['organize'], ['field data', 'operations', 'requests']), capability(['surface'], ['real-time updates', 'workflow state']), capability(['generate'], ['field reports']), capability(['support'], ['teams', 'your team']), capability(['save'], ['time'])],
+    Modules: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['clarify'], ['decision context'])],
+    Pipelines: [capability(['automate', 'organize', 'route'], ['handoffs', 'your workflows']), capability(['sync', 'validate'], ['your data'])],
+    Portals: [capability(['serve', 'support'], ['customers', 'support teams', 'your customers', 'your users']), capability(['clarify', 'organize'], ['records', 'requests'])],
+    Products: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your business', 'your customers', 'your users'])],
+    Reports: [capability(['clarify', 'surface'], ['decision context', 'operational metrics', 'patterns', 'signals']), capability(['clarify', 'organize'], ['field data']), capability(['measure'], ['operational metrics', 'signals'])],
+    Schedulers: [capability(['organize'], ['operations', 'your workflows']), capability(['simplify'], ['your workflows'])],
+    Queues: [capability(['organize', 'route'], ['handoffs', 'requests'])],
+    'Search tools': inheritedCapabilities('Search tools'),
+    Parsers: [capability(['clarify', 'organize', 'surface'], ['records']), capability(['sync', 'validate'], ['records', 'your data'])],
+    Importers: [capability(['organize', 'sync', 'validate'], ['records', 'your data'])],
+    Plugins: [capability(['connect', 'support'], ['your product', 'your stack'])],
+    Websites: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your business', 'your customers', 'your users'])],
+    Widgets: [capability(['clarify', 'surface'], ['decision context', 'signals']), capability(['support'], ['your product'])],
+    Workbenches: [capability(['clarify', 'organize'], ['decision context', 'operations', 'records', 'your data']), capability(['support'], ['your stack'])],
+    Consoles: [capability(['clarify', 'debug', 'monitor', 'surface', 'trace'], ['errors', 'operations', 'signals', 'your stack']), capability(['clarify', 'surface'], ['workflow state'])],
+    Toolkits: [capability(['help', 'support'], ['developers', 'teams', 'your team']), capability(['simplify'], ['your workflow']), capability(['equip'], ['creators', 'developers', 'founders', 'teams'])],
+    Frameworks: [capability(['support'], ['developers', 'your product', 'your stack']), capability(['organize', 'simplify'], ['your workflow'])],
+    Assistants: [capability(['help', 'support', 'work'], ['people', 'teams', 'users', 'your team', 'your users']), capability(['organize'], ['requests'])],
+    Frontends: [capability(['serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['connect'], ['your product'])],
+    UIs: [capability(['clarify', 'simplify'], ['operations', 'requests', 'your workflow']), capability(['clarify'], ['complex workflows', 'workflow state']), capability(['serve', 'support'], ['customers', 'users', 'your users'])],
+    'Admin panels': [capability(['clarify', 'organize', 'support'], ['operations', 'records', 'requests', 'support teams']), capability(['simplify'], ['your workflow'])],
+    Storefronts: [capability(['serve', 'support'], ['customers', 'your business', 'your customers'])],
+    'Command centers': [capability(['clarify', 'monitor', 'surface'], ['operations', 'signals', 'workflow state']), capability(['surface'], ['real-time updates']), capability(['support'], ['decision context', 'support teams'])],
+    Visualizations: [capability(['clarify'], ['complex workflows', 'operational metrics', 'patterns', 'workflow state']), capability(['surface'], ['operational metrics', 'patterns', 'workflow state'])],
+};
+const subjectAllowsTriple = (nounIdx: number, verbIdx: number, objIdx: number) => {
+    const capabilities = SUBJECT_CAPABILITIES[NOUNS[nounIdx].word];
+    if (!capabilities) return true;
+    return capabilities.some(
+        ({ verbs, objects }) =>
+            verbs.includes(VERBS[verbIdx].base) && objects.includes(objectText(objIdx))
+    );
+};
+const tripleKey = (noun: string, verb: string, object: string) =>
+    `${noun}\u0000${verb}\u0000${object}`;
+// Exact overrides handle combinations whose portfolio value differs from the
+// rest of an otherwise coherent capability group.
+const TRIPLE_QUALITY_OVERRIDES: Record<string, Quality> = {
+    [tripleKey('Products', 'serve', 'users')]: 'supporting',
+    [tripleKey('Products', 'serve', 'your users')]: 'supporting',
+    [tripleKey('Solutions', 'support', 'startups')]: 'supporting',
+    [tripleKey('Features', 'help', 'users')]: 'supporting',
+    [tripleKey('Features', 'help', 'your users')]: 'supporting',
+};
+const qualityForTriple = (nounIdx: number, verbIdx: number, objIdx: number): Quality => {
+    const override = TRIPLE_QUALITY_OVERRIDES[
+        tripleKey(NOUNS[nounIdx].word, VERBS[verbIdx].base, objectText(objIdx))
+    ];
+    if (override) return override;
+    const matches = (SUBJECT_CAPABILITIES[NOUNS[nounIdx].word] ?? []).filter(
+        ({ verbs, objects }) =>
+            verbs.includes(VERBS[verbIdx].base) && objects.includes(objectText(objIdx))
+    );
+    if (matches.some(({ quality }) => quality === 'strong')) return 'strong';
+    if (matches.some(({ quality }) => quality === 'exploratory')) return 'exploratory';
+    return 'supporting';
+};
+const QUALITY_WEIGHT: Record<Quality, number> = {
+    strong: 4,
+    exploratory: 3,
+    supporting: 1,
 };
 const verbAllowsSubject = (verbIdx: number, nounIdx: number) => {
     const verb = VERBS[verbIdx];
     const noun = NOUNS[nounIdx].word;
-    const subjectVerbAllowlist = SUBJECT_VERB_ALLOWLIST[noun];
-    if (subjectVerbAllowlist && !subjectVerbAllowlist.has(verb.base)) return false;
+    const capabilities = SUBJECT_CAPABILITIES[noun];
+    if (capabilities) {
+        return capabilities.some(({ verbs }) => verbs.includes(verb.base));
+    }
     if (verb.subjectKinds) return subjectMatches(nounIdx, verb.subjectKinds);
     switch (verb.base) {
         case 'work':
@@ -704,6 +919,9 @@ const verbAllowsSubject = (verbIdx: number, nounIdx: number) => {
                 'Bots',
                 'Services',
                 'Solutions',
+                'Experiences',
+                'Tech',
+                'Features',
                 'Interfaces',
                 'Chatbots',
                 'Portals',
@@ -727,10 +945,12 @@ const verbAllowsSubject = (verbIdx: number, nounIdx: number) => {
                 'Platforms',
                 'Services',
                 'Solutions',
+                'Tech',
                 'Internal tools',
                 'Workbenches',
                 'Admin panels',
                 'Assistants',
+                'Toolkits',
             ].includes(NOUNS[nounIdx].word);
         case 'free':
             return [
@@ -758,10 +978,403 @@ const verbAllowsSubject = (verbIdx: number, nounIdx: number) => {
     }
 };
 
+const allowsTriple = (nounIdx: number, verbIdx: number, objIdx: number) =>
+    verbAllowsSubject(verbIdx, nounIdx) &&
+    subjectAllowsTriple(nounIdx, verbIdx, objIdx) &&
+    verbAllowsObject(verbIdx, objIdx);
+type HeadlineTriple = {
+    nounIdx: number;
+    verbIdx: number;
+    objIdx: number;
+    link: string;
+    quality: Quality;
+    domain: HeadlineDomain;
+};
+const VALID_TRIPLES: HeadlineTriple[] = NOUNS.flatMap((_, nounIdx) =>
+    VERBS.flatMap((verb, verbIdx) =>
+        verb.links.flatMap((link) =>
+            OBJECTS.flatMap((_, objIdx) =>
+                allowsTriple(nounIdx, verbIdx, objIdx)
+                    ? [{
+                          nounIdx,
+                          verbIdx,
+                          objIdx,
+                          link,
+                          quality: qualityForTriple(nounIdx, verbIdx, objIdx),
+                          domain: domainForNoun(nounIdx),
+                      }]
+                    : []
+            )
+        )
+    )
+);
+const indexTriples = (key: keyof Pick<HeadlineTriple, 'nounIdx' | 'verbIdx' | 'objIdx'>) =>
+    VALID_TRIPLES.reduce<Map<number, HeadlineTriple[]>>((index, triple) => {
+        const value = triple[key];
+        index.set(value, [...(index.get(value) ?? []), triple]);
+        return index;
+    }, new Map());
+const TRIPLES_BY_NOUN = indexTriples('nounIdx');
+const TRIPLES_BY_VERB = indexTriples('verbIdx');
+const TRIPLES_BY_OBJECT = indexTriples('objIdx');
+const statementEligible = (triple: HeadlineTriple) =>
+    triple.quality !== 'exploratory';
+const questionEligible = (triple: HeadlineTriple, modalIdx: number) =>
+    modalText(modalIdx).startsWith('How ') || triple.quality !== 'exploratory';
+const STATEMENT_POOL = VALID_TRIPLES.flatMap((triple) =>
+    statementEligible(triple)
+        ? Array.from({ length: QUALITY_WEIGHT[triple.quality] }, () => triple)
+        : []
+);
+type QuestionCandidate = HeadlineTriple & { line1: string; line2: string };
+const QUESTION_POOLS: QuestionCandidate[][] = MODALS.map((_, modalIdx) =>
+    VALID_TRIPLES.flatMap((triple) => {
+        if (!questionEligible(triple, modalIdx)) return [];
+        const candidate = {
+            ...triple,
+            line1: `${modalText(modalIdx)} ${lowerSubject(NOUNS[triple.nounIdx].word)}`,
+            line2: `${VERBS[triple.verbIdx].base}${triple.link}${objectText(triple.objIdx)}?`,
+        };
+        return Array.from(
+            { length: QUALITY_WEIGHT[triple.quality] },
+            () => candidate
+        );
+    })
+);
+const STANCE_VERBS = new Set([
+    'empower',
+    'help',
+    'protect',
+    'serve',
+    'support',
+    'work',
+]);
+const STANCE_PROMPTS = VALID_TRIPLES.filter(
+    (triple) =>
+        triple.quality === 'strong' &&
+        STANCE_VERBS.has(VERBS[triple.verbIdx].base) &&
+        (humanObject(triple.objIdx) || organizationObject(triple.objIdx))
+).map((triple) =>
+    renderConstruction('stance', {
+        subject: NOUNS[triple.nounIdx].word,
+        subjectPlural: NOUNS[triple.nounIdx].plural,
+        verb: VERBS[triple.verbIdx],
+        link: triple.link,
+        object: objectText(triple.objIdx),
+    })
+);
+const REFLECTION_AUDIENCES = ['your team', 'your users', 'customers'] as const;
+const COUNTABLE_FRICTION = ['handoffs', 'bottlenecks', 'errors', 'requests'] as const;
+const REFLECTION_PROMPTS = [
+    ...COUNTABLE_FRICTION.flatMap((friction) => [
+        {
+            line1: `What gets easier`,
+            line2: `with fewer ${friction}?`,
+        },
+        ...REFLECTION_AUDIENCES.map((audience) => ({
+            line1: `Fewer ${friction}.`,
+            line2: `More time for ${audience}.`,
+        })),
+    ]),
+    ...REFLECTION_AUDIENCES.map((audience) => ({
+        line1: 'Less busywork.',
+        line2: `More time for ${audience}.`,
+    })),
+    {
+        line1: 'What could your team do',
+        line2: 'with less busywork?',
+    },
+];
+const COUNTERFACTUAL_PROMPTS = VALID_TRIPLES.filter(
+    (triple) => triple.quality !== 'supporting'
+).map((triple) =>
+    renderConstruction('counterfactual', {
+        subject: NOUNS[triple.nounIdx].word,
+        subjectPlural: NOUNS[triple.nounIdx].plural,
+        verb: VERBS[triple.verbIdx],
+        link: triple.link,
+        object: objectText(triple.objIdx),
+    })
+);
+const OUTCOME_CHAINS: OutcomeChain[] = [
+    {
+        friction: 'busywork',
+        capability: 'Clearer workflows',
+        intermediate: 'time for your team',
+        humanOutcome: 'people focused on useful work',
+    },
+    {
+        friction: 'scattered handoffs',
+        capability: 'Searchable context',
+        intermediate: 'calm in operations',
+        humanOutcome: 'teams deciding with context',
+    },
+    {
+        friction: 'unclear signals',
+        capability: 'Useful dashboards',
+        intermediate: 'context before decisions',
+        humanOutcome: 'people keeping final say',
+    },
+];
+const OUTCOME_CHAIN_PROMPTS = OUTCOME_CHAINS.flatMap(renderOutcomeChain);
+const PHRASE_PROMPTS = [
+    ...new Map(
+        [
+            ...STANCE_PROMPTS,
+            ...REFLECTION_PROMPTS,
+            ...COUNTERFACTUAL_PROMPTS,
+            ...OUTCOME_CHAIN_PROMPTS,
+            ...STATIC_PHRASE_PROMPTS,
+        ].map((prompt) => [`${prompt.line1}\u0000${prompt.line2}`, prompt])
+    ).values(),
+];
+// Complete committed-line corpus used by grammar and fit audits. Runtime
+// candidates still have to fit the rendered copy track before they commit;
+// transient mid-edit text is intentionally excluded.
+let headlineFitLines: string[] | null = null;
+const buildHeadlineFitLines = () => {
+    const lines = new Set<string>();
+    const addNounLines = (base: string, nounIdx: number) => {
+        lines.add(base);
+        const noun = lowerSubject(NOUNS[nounIdx].word);
+        const nounAt = base.toLowerCase().lastIndexOf(noun.toLowerCase());
+        if (nounAt < 0) return;
+        for (const emoji of [NOUN_EMOJI[nounIdx], ...EXTRA_EMOJI]) {
+            const end = nounAt + noun.length;
+            lines.add(`${base.slice(0, end)} ${emoji}${base.slice(end)}`);
+        }
+    };
+    const addObjectLines = (
+        base: string,
+        triple: HeadlineTriple,
+        question: boolean
+    ) => {
+        lines.add(base);
+        const emojis = question
+            ? [OBJ_EMOJI[triple.objIdx], ...EXTRA_EMOJI]
+            : [
+                  VERB_EMOJI[triple.verbIdx],
+                  OBJ_EMOJI[triple.objIdx],
+                  ...EXTRA_EMOJI,
+              ];
+        for (const emoji of emojis) lines.add(`${base} ${emoji}`);
+        if (!question) for (const punctuation of PUNCTS) lines.add(base + punctuation);
+    };
+
+    for (const triple of VALID_TRIPLES.filter(statementEligible)) {
+        for (const connector of CONNECTORS) {
+            const line1 = `${NOUNS[triple.nounIdx].word} ${connector}`;
+            addNounLines(line1, triple.nounIdx);
+            const conjugated =
+                connector === 'that' && !NOUNS[triple.nounIdx].plural
+                    ? thirdPerson(VERBS[triple.verbIdx])
+                    : VERBS[triple.verbIdx].base;
+            addObjectLines(
+                `${conjugated}${triple.link}${objectText(triple.objIdx)}`,
+                triple,
+                false
+            );
+        }
+    }
+    for (const pool of QUESTION_POOLS) {
+        for (const candidate of pool) {
+            addNounLines(candidate.line1, candidate.nounIdx);
+            addObjectLines(candidate.line2, candidate, true);
+        }
+    }
+    for (const prompt of PHRASE_PROMPTS) {
+        lines.add(prompt.line1);
+        lines.add(prompt.line2);
+    }
+    return [...lines];
+};
+
+export const getHeadlineFitLines = () => {
+    headlineFitLines ??= buildHeadlineFitLines();
+    return [...headlineFitLines];
+};
+const NARRATIVE_FOLLOWUPS = new Map(
+    [...REFLECTION_PROMPTS, ...COUNTERFACTUAL_PROMPTS].flatMap((prompt) => {
+        const object = OBJECTS.find(({ text }) =>
+            `${prompt.line1} ${prompt.line2}`.includes(text)
+        )?.text;
+        const followup = object
+            ? STANCE_PROMPTS.find((candidate) => candidate.line2.includes(object))
+            : undefined;
+        return followup
+            ? [[`${prompt.line1}\u0000${prompt.line2}`, followup] as const]
+            : [];
+    })
+);
+export const isHeadlineTripleAllowed = (noun: string, verb: string, object: string) => {
+    const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
+    const verbIdx = VERBS.findIndex(({ base }) => base === verb);
+    const objIdx = OBJECTS.findIndex(({ text }) => text === object);
+    return nounIdx >= 0 && verbIdx >= 0 && objIdx >= 0
+        ? allowsTriple(nounIdx, verbIdx, objIdx)
+        : false;
+};
+export const getHeadlineTripleQuality = (
+    noun: string,
+    verb: string,
+    object: string
+): Quality | null => {
+    const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
+    const verbIdx = VERBS.findIndex(({ base }) => base === verb);
+    const objIdx = OBJECTS.findIndex(({ text }) => text === object);
+    return nounIdx >= 0 && verbIdx >= 0 && objIdx >= 0 && allowsTriple(nounIdx, verbIdx, objIdx)
+        ? qualityForTriple(nounIdx, verbIdx, objIdx)
+        : null;
+};
+export const getHeadlineFormatSlots = (
+    mode: 'stmt' | 'q',
+    line1: string,
+    line2: string,
+    words: { noun: string; modal: string; verb: string; object: string }
+) => {
+    const slot = (line: 1 | 2, text: string, after = 0) => {
+        const source = line === 1 ? line1 : line2;
+        return { line, start: Math.max(0, source.indexOf(text, after)), text };
+    };
+    return mode === 'stmt'
+        ? [slot(1, words.noun), slot(2, words.verb), slot(2, words.object, words.verb.length)]
+        : [
+              slot(1, words.modal),
+              slot(1, words.noun, words.modal.length),
+              slot(2, words.verb),
+              slot(2, words.object, words.verb.length),
+          ];
+};
+
+export const auditHeadlineGrammar = () => {
+    const combinations = VALID_TRIPLES;
+    const knownNouns = new Set(NOUNS.map(({ word }) => word));
+    const knownVerbs = new Set(VERBS.map(({ base }) => base));
+    const knownObjects = new Set(OBJECTS.map(({ text }) => text));
+    const hasSemanticNeighbor = (triple: HeadlineTriple) =>
+        (TRIPLES_BY_NOUN.get(triple.nounIdx) ?? []).some(
+            (candidate) =>
+                candidate.objIdx === triple.objIdx && candidate.verbIdx !== triple.verbIdx ||
+                candidate.verbIdx === triple.verbIdx && candidate.objIdx !== triple.objIdx
+        ) ||
+        (TRIPLES_BY_OBJECT.get(triple.objIdx) ?? []).some(
+            (candidate) =>
+                candidate.verbIdx === triple.verbIdx && candidate.nounIdx !== triple.nounIdx
+        );
+
+    return {
+        unreachableNouns: NOUNS.filter(
+            (_, nounIdx) => !combinations.some((c) => c.nounIdx === nounIdx)
+        ).map(({ word }) => word),
+        unreachableVerbs: VERBS.filter(
+            (_, verbIdx) => !combinations.some((c) => c.verbIdx === verbIdx)
+        ).map(({ base }) => base),
+        unreachableObjects: OBJECTS.filter(
+            (_, objIdx) => !combinations.some((c) => c.objIdx === objIdx)
+        ).map(({ text }) => text),
+        invalidProfileNouns: [
+            ...new Set([
+                ...Object.keys(SUBJECT_CAPABILITIES),
+            ]),
+        ].filter((noun) => !knownNouns.has(noun)),
+        invalidProfileVerbs: Object.entries(SUBJECT_CAPABILITIES).flatMap(
+            ([noun, capabilities]) => capabilities.flatMap(({ verbs }) => verbs.filter((verb) => !knownVerbs.has(verb)).map((verb) => `${noun}: ${verb}`))
+        ),
+        invalidProfileObjects: Object.entries(SUBJECT_CAPABILITIES).flatMap(
+            ([noun, capabilities]) => capabilities.flatMap(({ objects }) => objects.filter((object) => !knownObjects.has(object)).map((object) => `${noun}: ${object}`))
+        ),
+        invalidQualityOverrides: Object.keys(TRIPLE_QUALITY_OVERRIDES).filter(
+            (key) => {
+                const [noun, verb, object] = key.split('\u0000');
+                const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
+                const verbIdx = VERBS.findIndex(({ base }) => base === verb);
+                const objIdx = OBJECTS.findIndex(({ text }) => text === object);
+                return (
+                    nounIdx < 0 ||
+                    verbIdx < 0 ||
+                    objIdx < 0 ||
+                    !allowsTriple(nounIdx, verbIdx, objIdx)
+                );
+            }
+        ),
+        unprofiledNouns: NOUNS.map(({ word }) => word).filter(
+            (noun) => !SUBJECT_CAPABILITIES[noun]
+        ),
+        deadCapabilities: Object.entries(SUBJECT_CAPABILITIES).flatMap(
+            ([noun, capabilities]) => {
+                const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
+                return capabilities.flatMap(({ verbs, objects }, capabilityIdx) =>
+                    combinations.some(
+                        (triple) =>
+                            triple.nounIdx === nounIdx &&
+                            verbs.includes(VERBS[triple.verbIdx].base) &&
+                            objects.includes(objectText(triple.objIdx))
+                    )
+                        ? []
+                        : [`${noun}[${capabilityIdx}]`]
+                );
+            }
+        ),
+        isolatedTriples: combinations.filter((triple) => !hasSemanticNeighbor(triple)).map(
+            ({ nounIdx, verbIdx, objIdx }) =>
+                `${NOUNS[nounIdx].word} | ${VERBS[verbIdx].base} | ${objectText(objIdx)}`
+        ),
+        questionUnreachableNouns: NOUNS.filter(
+            (_, nounIdx) => !(TRIPLES_BY_NOUN.get(nounIdx)?.length)
+        ).map(({ word }) => word),
+        statementUnreachableNouns: NOUNS.filter(
+            (_, nounIdx) =>
+                !VALID_TRIPLES.some(
+                    (triple) => triple.nounIdx === nounIdx && statementEligible(triple)
+                )
+        ).map(({ word }) => word),
+        questionUnreachableByModal: MODALS.map((modal, modalIdx) => ({
+            modal,
+            nouns: NOUNS.filter(
+                (_, nounIdx) =>
+                    !VALID_TRIPLES.some(
+                        (triple) =>
+                            triple.nounIdx === nounIdx &&
+                            questionEligible(triple, modalIdx)
+                    )
+            ).map(({ word }) => word),
+        })),
+        qualityCounts: VALID_TRIPLES.reduce<Record<Quality, number>>(
+            (counts, triple) => ({
+                ...counts,
+                [triple.quality]: counts[triple.quality] + 1,
+            }),
+            { strong: 0, exploratory: 0, supporting: 0 }
+        ),
+        questionLeadCount: MODALS.length,
+        phrasePromptCount: PHRASE_PROMPTS.length,
+        stancePromptCount: STANCE_PROMPTS.length,
+        counterfactualPromptCount: COUNTERFACTUAL_PROMPTS.length,
+        emojiArraysAligned:
+            NOUN_EMOJI.length === NOUNS.length &&
+            VERB_EMOJI.length === VERBS.length &&
+            OBJ_EMOJI.length === OBJECTS.length,
+        combinationCount: combinations.length,
+        graphHealth: analyzeRelationGraph(
+            VALID_TRIPLES.map((triple) => ({
+                subject: NOUNS[triple.nounIdx].word,
+                verb: VERBS[triple.verbIdx].base,
+                object: objectText(triple.objIdx),
+            }))
+        ),
+        roleManifestValid: ROLE_MANIFEST.valid,
+        inheritedSubjectCount: ROLE_MANIFEST.relations.reduce(
+            (subjects, relation) => subjects.add(relation.subject),
+            new Set<string>()
+        ).size,
+    };
+};
+
 const HOLD_MS = 2600; // pause on a finished sentence
 const GAP_MS = 500; // pause on an empty word before retyping
-const TYPO_CHANCE = 0.08; // per keystroke, corrected immediately
-const LATE_TYPO_CHANCE = 0.16; // per word, left in then fixed after finishing
+export const HEADLINE_FIT_SAFETY_PX = 12; // caret and emphasis overhang
+const TYPO_CHANCE = 0.025; // occasional adjacent-key slip, corrected visibly
+const LATE_TYPO_CHANCE = 0.07; // rarer mistake noticed after finishing a word
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const typeDelay = () =>
@@ -774,13 +1387,13 @@ const mouseDelay = () => rand(420, 720); // reaching for the mouse, resetting
 const arrowDelay = () => rand(55, 130); // one arrow-key press
 const shiftReach = () => rand(55, 150); // extra beat to reach for Shift
 const ARROW_CHANCE = 0.4; // navigate by arrow keys instead of clicking
-const SPACE_ERR = 0.16; // per internal space: run words together / double it
-const BRAINO_CHANCE = 0.2; // type a plausible wrong word, then fix it
+const SPACE_ERR = 0.04; // rare internal-space mistake
 
 // A statement verb keeps its "s" only for a singular subject joined by "that".
 const wantsS = (nounIdx: number, connIdx: number) =>
     CONNECTORS[connIdx] === 'that' && !NOUNS[nounIdx].plural;
-const verbForm = (base: string, hasS: boolean) => (hasS ? base + 's' : base);
+const verbForm = (base: string, hasS: boolean) =>
+    hasS ? thirdPerson({ base }) : base;
 
 // QWERTY neighbours, so a mistyped key is one a finger could actually slip to.
 const NEIGHBORS: Record<string, string> = {
@@ -868,8 +1481,6 @@ type Sel = { line: Line; start: number; end: number };
 // the word is mid-edited).
 type Fmt = { line: Line; start: number; end: number; kind: FmtKind };
 const FMT_KINDS: FmtKind[] = ['b', 'i', 'u'];
-const SELECT_CHANCE = 0.28; // a word swap done by selecting then typing over it
-
 // A caret lives on both lines at all times so each line box reserves its height
 // and never grows/shrinks when the caret arrives or leaves — only its
 // visibility changes. `visible` is the line the caret is actually on.
@@ -881,6 +1492,82 @@ const Caret = ({ visible, moving }: { visible: boolean; moving: boolean }) => (
     />
 );
 
+type HeadlineLineRunsProps = {
+    lineNum: Line;
+    text: string;
+    caretVisible: boolean;
+    caretPosition: number;
+    moving: boolean;
+    selection: Sel | null;
+    format: Fmt | null;
+};
+
+const HeadlineLineRuns = memo(
+    ({
+        lineNum,
+        text,
+        caretVisible,
+        caretPosition,
+        moving,
+        selection,
+        format,
+    }: HeadlineLineRunsProps) => {
+        const formatRange: [number, number] | null =
+            format && format.end > format.start
+                ? [
+                      Math.min(format.start, text.length),
+                      Math.min(format.end, text.length),
+                  ]
+                : null;
+        const cuts = new Set<number>([0, text.length, caretPosition]);
+        if (selection) cuts.add(selection.start), cuts.add(selection.end);
+        if (formatRange) cuts.add(formatRange[0]), cuts.add(formatRange[1]);
+        const points = [...cuts]
+            .filter((position) => position >= 0 && position <= text.length)
+            .sort((left, right) => left - right);
+        const runs: React.ReactNode[] = [];
+
+        for (let index = 0; index < points.length; index += 1) {
+            const start = points[index];
+            if (start === caretPosition) {
+                runs.push(
+                    <Caret
+                        key={`car${lineNum}`}
+                        visible={caretVisible}
+                        moving={moving}
+                    />
+                );
+            }
+            const end = points[index + 1];
+            if (end === undefined || end === start) continue;
+            const classes = ['tw-word'];
+            if (
+                selection &&
+                start >= selection.start &&
+                end <= selection.end &&
+                selection.end > selection.start
+            ) {
+                classes.push('tw-sel');
+            }
+            if (
+                formatRange &&
+                start >= formatRange[0] &&
+                end <= formatRange[1]
+            ) {
+                classes.push(`tw-${format!.kind}`);
+            }
+            runs.push(
+                <span key={`${lineNum}-${start}`} className={classes.join(' ')}>
+                    {text.slice(start, end)}
+                </span>
+            );
+        }
+        return runs;
+    }
+);
+
+HeadlineLineRuns.displayName = 'HeadlineLineRuns';
+
 const INIT_L1 = NOUNS[0].word + ' ' + CONNECTORS[0];
 const INIT_L2 =
     verbForm(VERBS[0].base, true) + VERBS[0].links[0] + objectText(0);
@@ -891,6 +1578,7 @@ const TypewriterHeadline = () => {
     const [caretLine, setCaretLine] = useState<Line>(2);
     const [caretPos, setCaretPos] = useState(INIT_L2.length);
     const [moving, setMoving] = useState(false);
+    const [testMode, setTestMode] = useState(false);
     const [selection, setSelection] = useState<Sel | null>(null);
     const [format, setFormat] = useState<Fmt | null>(null);
     const line2Ref = useRef<HTMLElement>(null);
@@ -904,6 +1592,8 @@ const TypewriterHeadline = () => {
         if (reduce) return; // leave the first sentence in place
 
         let timer: ReturnType<typeof setTimeout>;
+        let activeRuntime: HeadlineEditRuntime | null = null;
+        let runtimeCadence = 65;
         // The whole animation is a chain of scheduled steps. `schedule` gates
         // that chain on visibility: while the hero is off-screen or the tab is
         // hidden it holds the next step instead of running it, so nothing
@@ -911,15 +1601,47 @@ const TypewriterHeadline = () => {
         // off. `running` reflects visibility; `lastFn` is the pending step.
         let running = true;
         let lastFn: (() => void) | null = null;
+        const testSpeed = (window as Window & { __headlineTestSpeed?: number })
+            .__headlineTestSpeed;
+        const speed =
+            typeof testSpeed === 'number' && testSpeed > 0
+                ? Math.min(testSpeed, 1)
+                : 1;
+        if (speed < 1) {
+            setTestMode(true);
+        }
+        const measuredWidths = new Map<string, number>();
+        const measurementLimit = 512;
+        let headlineWidth = line2Ref.current?.clientWidth ?? 600;
+        let disposed = false;
+        const clearMeasurements = () => measuredWidths.clear();
+        const fitResizeObserver =
+            typeof ResizeObserver === 'undefined'
+                ? null
+                : new ResizeObserver(([entry]) => {
+                      const nextWidth = entry.target.clientWidth;
+                      if (nextWidth === headlineWidth) return;
+                      headlineWidth = nextWidth;
+                      clearMeasurements();
+                  });
+        if (line2Ref.current) fitResizeObserver?.observe(line2Ref.current);
+        void document.fonts?.ready.then(() => {
+            if (!disposed) clearMeasurements();
+        });
         const schedule = (fn: () => void, delay: number) => {
             lastFn = fn;
-            if (running) timer = setTimeout(fn, delay);
+            if (running) timer = setTimeout(fn, Math.max(1, delay * speed));
         };
         const setRunning = (v: boolean) => {
             if (v === running) return;
             running = v;
-            if (!running) clearTimeout(timer);
-            else if (lastFn) schedule(lastFn, 0); // resume the held step
+            if (!running) {
+                clearTimeout(timer);
+                activeRuntime?.pause();
+            } else {
+                activeRuntime?.resume(false);
+                if (lastFn) schedule(lastFn, 0); // resume the held adapter step
+            }
         };
 
         let mode: Mode = 'stmt';
@@ -942,6 +1664,67 @@ const TypewriterHeadline = () => {
         let cPos = l2.length;
         let sel: Sel | null = null; // transient highlight while selecting
         let fmt: Fmt | null = null; // a word left bold / italic / underlined
+        let fmtAffinity: (FormattingAffinity & { line: Line }) | null = null;
+        let phraseQueue: Array<{ line1: string; line2: string }> = [];
+        let triplePathQueue: HeadlineTriple[] = [];
+        let phraseFamily: ConstructionFamily = 'reflection';
+        const telemetry = {
+            states: 0,
+            modes: { stmt: 0, q: 0, phrase: 0 },
+            families: {} as Record<string, number>,
+            domains: {} as Record<string, number>,
+            edits: {} as Record<string, number>,
+        };
+        const trajectory = new TrajectoryMemory(18);
+        const narrative = new NarrativePlanner(10, 1.4);
+        const editPlanner = new EditStrategyPlanner(7);
+        const compositeEdits = new CompositeEditPlanner();
+        const caretAnchors = new CaretAnchorMemory();
+        const behaviorPolicy = new HeadlineBehaviorPolicy(10);
+        let plannedNavigation: CaretNavigationMode | null = null;
+        let plannedTiming: TimingProfile = 'deliberate';
+        const tripleTrajectoryKey = (triple: HeadlineTriple) =>
+            `${NOUNS[triple.nounIdx].word}|${VERBS[triple.verbIdx].base}|${objectText(
+                triple.objIdx
+            )}`;
+        const currentTrajectoryKey = () =>
+            `${NOUNS[nounIdx].word}|${VERBS[verbIdx].base}|${objectText(objIdx)}`;
+        trajectory.remember(currentTrajectoryKey());
+        const candidateBudget = () =>
+            headlineWidth < 420 ? 24 : 48;
+        const familyEnergy = (family: ConstructionFamily): Energy => {
+            if (family === 'counterfactual' || family === 'question') return 'curious';
+            if (family === 'reflection') return 'quiet';
+            if (family === 'stance') return 'playful';
+            return 'concrete';
+        };
+        const trajectoryCandidate = <T,>(
+            value: T,
+            triple: HeadlineTriple,
+            family: ConstructionFamily,
+            key: string
+        ): TrajectoryCandidate<T> => ({
+            value,
+            key,
+            subject: NOUNS[triple.nounIdx].word,
+            verb: VERBS[triple.verbIdx].base,
+            object: objectText(triple.objIdx),
+            domain: triple.domain,
+            family,
+            quality: triple.quality,
+            energy: familyEnergy(family),
+            surprise:
+                family === 'counterfactual'
+                    ? 0.8
+                    : family === 'question'
+                      ? 0.45
+                      : 0.2,
+            concepts: [
+                triple.domain,
+                VERBS[triple.verbIdx].base,
+                ...OBJECTS[triple.objIdx].kinds,
+            ],
+        });
 
         const paint = () => {
             setLine1(l1);
@@ -953,81 +1736,111 @@ const TypewriterHeadline = () => {
         // Keep the formatted range in step with edits on its line. Inserting
         // `count` chars at `pos`: before the range shifts it right; inside (or at
         // an empty range) extends it, so retyped text inherits the format.
-        const fmtInsert = (line: Line, pos: number, count: number) => {
+        const fmtInsert = (line: Line, pos: number, text: string) => {
             if (!fmt || fmt.line !== line) return;
-            let { start, end } = fmt;
-            if (pos < start) {
-                start += count;
-                end += count;
-            } else if (pos <= end) {
-                end += count;
-            }
+            const transformed = transformFormattedInsert(
+                [fmt.start, fmt.end],
+                pos,
+                text,
+                fmtAffinity?.line === line ? fmtAffinity : null
+            );
+            const [start, end] = transformed.range;
+            fmtAffinity = transformed.affinity
+                ? { ...transformed.affinity, line }
+                : null;
             fmt = { ...fmt, start, end };
             setFormat(fmt);
         };
         // Removing chars [a,b) on `line`: shrink/shift the range to match.
         const fmtDelete = (line: Line, a: number, b: number) => {
             if (!fmt || fmt.line !== line) return;
-            const beforeStart = Math.max(0, Math.min(b, fmt.start) - a);
-            const beforeEnd = Math.max(0, Math.min(b, fmt.end) - a);
-            const start = fmt.start - beforeStart;
-            const end = fmt.end - beforeEnd;
-            fmt = { ...fmt, start, end: Math.max(start, end) };
+            const transformed = transformFormattedDelete(
+                [fmt.start, fmt.end],
+                [a, b],
+                fmtAffinity?.line === line ? fmtAffinity : null
+            );
+            const [start, end] = transformed.range;
+            fmtAffinity = transformed.affinity
+                ? { ...transformed.affinity, line }
+                : null;
+            fmt = { ...fmt, start, end };
             setFormat(fmt);
         };
 
         // Would `candidate` line-two text still fit on one line?
         const fits = (candidate: string) => {
             const m = measureRef.current;
-            const box = line2Ref.current;
-            if (!m || !box) return candidate.length <= 16;
-            m.textContent = candidate;
-            return m.offsetWidth <= box.clientWidth;
+            if (!m) return candidate.length <= 16;
+            let measuredWidth = measuredWidths.get(candidate);
+            if (measuredWidth === undefined) {
+                m.textContent = candidate;
+                measuredWidth = m.offsetWidth;
+                if (measuredWidths.size >= measurementLimit) {
+                    measuredWidths.delete(measuredWidths.keys().next().value!);
+                }
+                measuredWidths.set(candidate, measuredWidth);
+            }
+            return measuredWidth <= headlineWidth - HEADLINE_FIT_SAFETY_PX;
         };
 
         const nounWord = () => NOUNS[nounIdx].word;
         const verbStr = () => verbForm(VERBS[verbIdx].base, hasS);
-        // Where the noun begins on line one, per mode ("" / "What <modal> ").
+        // Where the noun begins on line one, per mode ("" / "<Modal> ").
         const nounStart = () =>
-            mode === 'stmt' ? 0 : 5 + MODALS[modalIdx].length + 1;
+            mode === 'stmt' ? 0 : MODALS[modalIdx].length + 1;
         // Where the connector begins (statement), shifted by any noun garnish.
         const connStart = () => nounWord().length + gNoun.length + 1;
         // Where the object begins on line two, per mode. Statements use the
-        // current verb + its link; questions are always "do for ".
+        // current verb + its link; questions use the base verb after a modal.
         const objStart = () =>
-            mode === 'stmt' ? verbStr().length + link.length : 2 + FOR.length;
+            (mode === 'stmt' ? verbStr().length : VERBS[verbIdx].base.length) +
+            link.length;
+        const constructionAllows = (
+            n: number,
+            v: number,
+            o: number,
+            m = modalIdx
+        ) => {
+            if (!allowsTriple(n, v, o)) return false;
+            const quality = qualityForTriple(n, v, o);
+            return mode === 'stmt'
+                ? quality !== 'exploratory'
+                : modalText(m).startsWith('How ') || quality !== 'exploratory';
+        };
         const objectAllowed = (i: number) =>
-            subjectAllowsObject(nounIdx, i) &&
-            (mode === 'stmt'
-                ? verbAllowsObject(verbIdx, i)
-                : !OBJECTS[i].kinds.includes('abstract'));
-        const nounAllowed = (i: number) =>
-            mode === 'stmt' || !QUESTION_SUBJECT_BLOCKLIST.has(NOUNS[i].word);
-        const questionText = (n: number, o: number, m = modalIdx) => ({
-            line1: `What ${MODALS[m]} ${NOUNS[n].word.toLowerCase()}`,
-            line2: `do${FOR}${objectText(o)}?`,
-        });
-        const questionPairCandidates = () =>
-            QUESTION_PAIRS.map(([noun, obj]) => ({
-                nounIdx: NOUNS.findIndex((n) => n.word === noun),
-                objIdx: OBJECTS.findIndex((o) => o.text === obj),
-            })).filter(({ nounIdx: n, objIdx: o }) => {
-                if (n < 0 || o < 0) return false;
-                const q = questionText(n, o);
-                return subjectAllowsObject(n, o) && fits(q.line1) && fits(q.line2);
-            });
-        const pickQuestionPair = (avoidNoun = nounIdx, avoidObj = objIdx) => {
-            const candidates = questionPairCandidates().filter(
-                (p) => p.nounIdx !== avoidNoun || p.objIdx !== avoidObj
-            );
-            if (!candidates.length) return null;
-            return candidates[Math.floor(Math.random() * candidates.length)];
+            constructionAllows(nounIdx, verbIdx, i);
+        const pickQuestion = () => {
+            const pool = QUESTION_POOLS[modalIdx];
+            const start = Math.floor(Math.random() * pool.length);
+            const fitting: TrajectoryCandidate<QuestionCandidate>[] = [];
+            const seen = new Set<string>();
+            for (let offset = 0; offset < pool.length; offset++) {
+                const candidate = pool[(start + offset) % pool.length];
+                if (
+                    candidate.nounIdx === nounIdx &&
+                    candidate.verbIdx === verbIdx &&
+                    candidate.objIdx === objIdx
+                ) continue;
+                const key = `${modalText(modalIdx)}|${tripleTrajectoryKey(candidate)}`;
+                if (
+                    !seen.has(key) &&
+                    fits(candidate.line1) &&
+                    fits(candidate.line2)
+                ) {
+                    seen.add(key);
+                    fitting.push(
+                        trajectoryCandidate(candidate, candidate, 'question', key)
+                    );
+                    if (fitting.length >= candidateBudget()) break;
+                }
+            }
+            return narrative.choose(fitting);
         };
         // Line one composed for the fit check, with a noun garnish `gn`.
         const composeL1 = (n: number, c: number, m: number, gn: string) =>
             mode === 'stmt'
                 ? `${NOUNS[n].word}${gn} ${CONNECTORS[c]}`
-                : `What ${MODALS[m]} ${NOUNS[n].word.toLowerCase()}${gn}`;
+                    : `${modalText(m)} ${lowerSubject(NOUNS[n].word)}${gn}`;
 
         // --- primitives ---------------------------------------------------
 
@@ -1061,7 +1874,11 @@ const TypewriterHeadline = () => {
                         if (cPos > lineLen()) cPos = lineLen();
                         setCaretLine(cLine);
                     } else {
-                        cPos += target > cPos ? 1 : -1;
+                        const text = line === 1 ? l1 : l2;
+                        cPos =
+                            target > cPos
+                                ? nextGraphemeBoundary(text, cPos)
+                                : previousGraphemeBoundary(text, cPos);
                     }
                     setCaretPos(cPos);
                     schedule(step, arrowDelay());
@@ -1074,8 +1891,10 @@ const TypewriterHeadline = () => {
                     0,
                     Math.min(lineLen(), pos + dir * (1 + Math.floor(Math.random() * 2)))
                 );
-                if (over !== pos) {
-                    walk(over, () => {
+                const text = line === 1 ? l1 : l2;
+                const safeOver = normalizeGraphemeRange(text, over, over)[0];
+                if (safeOver !== pos) {
+                    walk(safeOver, () => {
                         schedule(() => walk(pos, done), rand(120, 300));
                     });
                     return;
@@ -1130,7 +1949,23 @@ const TypewriterHeadline = () => {
         // Move the caret to (line, pos): mostly a mouse click, sometimes arrow
         // keys, sometimes word-jumps.
         const click = (line: Line, pos: number, done: () => void) => {
+            const semanticMode = plannedNavigation;
+            plannedNavigation = null;
             if (cLine === line && cPos === pos) return done();
+            if (semanticMode) {
+                telemetry.edits[`navigation:${semanticMode}`] =
+                    (telemetry.edits[`navigation:${semanticMode}`] ?? 0) + 1;
+                if (semanticMode === 'arrow') return arrowTo(line, pos, done);
+                if (semanticMode === 'word-jump') {
+                    return wordJumpTo(line, pos, done);
+                }
+                return jump(line, pos, done);
+            }
+            const distance = cLine === line ? Math.abs(cPos - pos) : Infinity;
+            if (distance <= 4) return arrowTo(line, pos, done);
+            if (distance <= 16 && Math.random() < 0.65) {
+                return wordJumpTo(line, pos, done);
+            }
             const r = Math.random();
             if (r < ARROW_CHANCE / 2) wordJumpTo(line, pos, done);
             else if (r < ARROW_CHANCE) arrowTo(line, pos, done);
@@ -1157,16 +1992,15 @@ const TypewriterHeadline = () => {
                     return;
                 }
                 const s = current();
-                let remove = 1;
-                const lo = s.charCodeAt(cPos - 1);
-                if (lo >= 0xdc00 && lo <= 0xdfff && cPos >= 2) {
-                    const hi = s.charCodeAt(cPos - 2);
-                    if (hi >= 0xd800 && hi <= 0xdbff) remove = 2; // full emoji
-                }
-                write(s.slice(0, cPos - remove) + s.slice(cPos));
-                fmtDelete(cLine, cPos - remove, cPos);
-                cPos -= remove;
-                left -= remove;
+                const boundaries = normalizeGraphemeRange(s, cPos, cPos);
+                const safeCaret =
+                    boundaries[0] === cPos ? cPos : boundaries[1];
+                const from = previousGraphemeBoundary(s, safeCaret);
+                const remove = safeCaret - from;
+                write(s.slice(0, from) + s.slice(safeCaret));
+                fmtDelete(cLine, from, safeCaret);
+                cPos = from;
+                left -= Math.min(left, remove);
                 held += 1;
                 paint();
                 schedule(step, heldDelay());
@@ -1185,7 +2019,7 @@ const TypewriterHeadline = () => {
             const insert = (ch: string) => {
                 const s = current();
                 write(s.slice(0, cPos) + ch + s.slice(cPos));
-                fmtInsert(cLine, cPos, 1);
+                fmtInsert(cLine, cPos, ch);
                 cPos += 1;
                 paint();
             };
@@ -1259,37 +2093,12 @@ const TypewriterHeadline = () => {
                     schedule(step, nextDelay());
                 }
             };
-            // An instantly caught mistake at position i, then resume typing.
+            // A single adjacent-key slip, noticed and corrected at a readable
+            // pace. Multi-character mistakes are reserved for `typeLate`, so
+            // correction never flashes several mutations in one frame.
             const slipUp = () => {
                 const wrong = slip(str[i]);
-                const r = Math.random();
-                if (r < 0.6 && str[i + 1] && str[i] !== str[i + 1]) {
-                    // transposition: type the next two letters swapped
-                    insert(str[i + 1]);
-                    insert(str[i]);
-                    schedule(() => {
-                        unInsert();
-                        unInsert();
-                        schedule(() => {
-                            insert(str[i]);
-                            insert(str[i + 1]);
-                            i += 2;
-                            schedule(step, typeDelay());
-                        }, resumeDelay());
-                    }, quickNotice());
-                } else if (r < 0.8 && str[i - 1] !== str[i]) {
-                    // doubled letter: repeat the previous one, then drop it
-                    insert(str[i - 1]);
-                    schedule(() => {
-                        unInsert();
-                        schedule(() => {
-                            insert(str[i]);
-                            i += 1;
-                            schedule(step, typeDelay());
-                        }, resumeDelay());
-                    }, quickNotice());
-                } else if (wrong) {
-                    // adjacent-key substitution
+                if (wrong) {
                     insert(wrong);
                     schedule(() => {
                         unInsert();
@@ -1297,8 +2106,8 @@ const TypewriterHeadline = () => {
                             insert(str[i]);
                             i += 1;
                             schedule(step, typeDelay());
-                        }, resumeDelay());
-                    }, noticeDelay());
+                        }, rand(180, 340));
+                    }, rand(360, 620));
                 } else {
                     insert(str[i]);
                     i += 1;
@@ -1369,6 +2178,8 @@ const TypewriterHeadline = () => {
             end: number,
             done: () => void
         ) => {
+            const source = line === 1 ? l1 : l2;
+            [start, end] = normalizeGraphemeRange(source, start, end);
             if (Math.random() < 0.45) {
                 // double-click: the word highlights all at once
                 click(line, end, () => {
@@ -1383,18 +2194,34 @@ const TypewriterHeadline = () => {
                 });
                 return;
             }
-            click(line, start, () => {
-                let cur = start;
+            const distanceToStart = cLine === line ? Math.abs(cPos - start) : Infinity;
+            const distanceToEnd = cLine === line ? Math.abs(cPos - end) : Infinity;
+            const backward =
+                distanceToEnd < distanceToStart
+                    ? Math.random() < 0.8
+                    : distanceToEnd === distanceToStart
+                      ? Math.random() < 0.35
+                      : false;
+            const origin = backward ? end : start;
+            const direction = backward ? 'backward' : 'forward';
+            telemetry.edits[`selection:${direction}`] =
+                (telemetry.edits[`selection:${direction}`] ?? 0) + 1;
+            click(line, origin, () => {
+                let cur = origin;
                 const grow = () => {
                     setMoving(true);
-                    if (cur >= end) {
+                    if ((!backward && cur >= end) || (backward && cur <= start)) {
                         schedule(done, rand(240, 460)); // hold selection
                         return;
                     }
-                    cur += 1;
+                    cur = backward
+                        ? previousGraphemeBoundary(source, cur)
+                        : nextGraphemeBoundary(source, cur);
                     cLine = line;
                     cPos = cur;
-                    sel = { line, start, end: cur };
+                    sel = backward
+                        ? { line, start: cur, end }
+                        : { line, start, end: cur };
                     setSelection(sel);
                     setCaretLine(line);
                     setCaretPos(cur);
@@ -1422,6 +2249,124 @@ const TypewriterHeadline = () => {
             done();
         };
 
+        const executeOperations = (
+            operations: EditOperation[],
+            onCommit: () => void,
+            expectedLines: [string, string] = [l1, l2],
+            timingProfile: TimingProfile = behaviorPolicy.chooseTiming()
+        ) => {
+            const initialLines: [string, string] = [l1, l2];
+            runtimeCadence =
+                timingProfile === 'crisp'
+                    ? 24
+                    : timingProfile === 'exploratory'
+                      ? 135
+                      : 65;
+            activeRuntime ??= new HeadlineEditRuntime(
+                {
+                    execute: (operation, next) => {
+                        const advance = () => schedule(next, runtimeCadence);
+                        switch (operation.type) {
+                            case 'move-caret':
+                                click(operation.line, operation.position, advance);
+                                break;
+                            case 'select-range':
+                                selectRange(
+                                    operation.line,
+                                    operation.start,
+                                    operation.end,
+                                    advance
+                                );
+                                break;
+                            case 'delete-selection':
+                                deleteSel(advance);
+                                break;
+                            case 'backspace':
+                                backspace(operation.count, advance);
+                                break;
+                            case 'insert-text':
+                                if (operation.allowTypos) {
+                                    typeWord(operation.text, advance);
+                                } else {
+                                    type(operation.text, advance, false);
+                                }
+                                break;
+                            case 'replace-punctuation': {
+                                const text = operation.line === 1 ? l1 : l2;
+                                const at = text.lastIndexOf(operation.from);
+                                if (at < 0) return advance();
+                                selectRange(
+                                    operation.line,
+                                    at,
+                                    at + operation.from.length,
+                                    () =>
+                                        deleteSel(() =>
+                                            type(operation.to, advance, false)
+                                        )
+                                );
+                                break;
+                            }
+                            case 'transfer-emphasis':
+                                selectRange(
+                                    operation.line,
+                                    operation.start,
+                                    operation.end,
+                                    () => {
+                                        fmt = {
+                                            line: operation.line,
+                                            start: operation.start,
+                                            end: operation.end,
+                                            kind: fmt?.kind ?? 'b',
+                                        };
+                                        setFormat(fmt);
+                                        sel = null;
+                                        setSelection(null);
+                                        advance();
+                                    }
+                                );
+                                break;
+                            case 'pause':
+                                schedule(
+                                    next,
+                                    timingDelay(
+                                        timingProfile,
+                                        operation.duration === 'brief'
+                                            ? quickNotice()
+                                            : noticeDelay()
+                                    )
+                                );
+                                break;
+                            case 'commit-semantic-state':
+                                advance();
+                                break;
+                        }
+                    },
+                },
+                speed < 1 && rootRef.current
+                    ? (trace) => {
+                          rootRef.current!.dataset.editTrace = JSON.stringify(
+                              trace.map(({ phase, operationIndex, operation }) => ({
+                                  phase,
+                                  operationIndex,
+                                  operation: operation?.type ?? null,
+                              }))
+                          );
+                      }
+                    : undefined
+            );
+            activeRuntime.run({
+                initialLines,
+                expectedLines,
+                operations,
+                onCommit,
+                onRecovery: () => {
+                    telemetry.edits['runtime:recovery'] =
+                        (telemetry.edits['runtime:recovery'] ?? 0) + 1;
+                    onCommit();
+                },
+            });
+        };
+
         // Formatting tracks a character range (see fmtInsert/fmtDelete), so it
         // shifts with edits and needs no manual bookkeeping in the swaps.
 
@@ -1434,12 +2379,52 @@ const TypewriterHeadline = () => {
             curLen: number,
             next: string,
             done: () => void,
-            decoy?: string
+            decoy?: string,
+            forcedChoreography?: WordEditChoreography
         ) => {
             // Loosen the boundaries a bit — a real selection/backspace often
             // grabs an adjacent space rather than landing exactly on the word.
             // Whatever space we swallow, we retype, so the sentence is unchanged.
             const src = line === 1 ? l1 : l2;
+            const semanticSlot = (): CaretAnchorSlot => {
+                if (start === 0 && curLen === src.length) return 'construction';
+                if (line === 2) return start === 0 ? 'verb' : 'object';
+                if (mode === 'q' && start === 0) return 'modal';
+                if (start === nounStart()) return 'subject';
+                return 'connector';
+            };
+            plannedNavigation = caretAnchors.plan(
+                {
+                    slot: semanticSlot(),
+                    line,
+                    start,
+                    end: start + curLen,
+                },
+                { line: cLine, position: cPos }
+            );
+            const safeNavigation: Array<{
+                value: CaretNavigationMode;
+                weight: number;
+            }> = (() => {
+                const distance = cLine === line ? Math.abs(cPos - start) : Infinity;
+                return cLine !== line || distance > 22
+                    ? [{ value: 'direct', weight: 1 }]
+                    : [
+                          { value: plannedNavigation, weight: 7 },
+                          { value: 'word-jump', weight: 2 },
+                          { value: 'direct', weight: 1 },
+                      ];
+            })();
+            plannedNavigation = behaviorPolicy.choose(
+                'navigation',
+                safeNavigation.filter(
+                    (candidate, index, all) =>
+                        all.findIndex(({ value }) => value === candidate.value) === index
+                )
+            );
+            const slot = semanticSlot();
+            behaviorPolicy.record('slot', slot);
+            plannedTiming = behaviorPolicy.chooseTiming();
             let s = start;
             let e = start + curLen;
             const lead = s > 0 && src[s - 1] === ' ' && Math.random() < 0.4;
@@ -1449,42 +2434,175 @@ const TypewriterHeadline = () => {
             const wrap = (w: string) =>
                 (lead ? ' ' : '') + w + (trail ? ' ' : '');
             const repl = wrap(next);
-            const span = e - s;
             // Type the replacement — but now and then type a plausible wrong
             // word first, realize, wipe it, and type the intended one.
+            const planned = forcedChoreography
+                ? {
+                      strategy: forcedChoreography,
+                      choreography: forcedChoreography,
+                      revision: diffTextRevision(
+                          src.slice(s, e),
+                          repl,
+                          forcedChoreography
+                      ),
+                  }
+                : editPlanner.choose(src.slice(s, e), repl, Boolean(decoy));
+            const { choreography, revision } = planned;
+            behaviorPolicy.record('operation', planned.strategy);
+            telemetry.edits[planned.strategy] =
+                (telemetry.edits[planned.strategy] ?? 0) + 1;
+            const expected = src.slice(0, s) + repl + src.slice(e);
+            const editStart = s + revision.removeStart;
+            const editEnd = s + revision.removeEnd;
+            const span = editEnd - editStart;
+            const verify = (cb: () => void) => {
+                const actual = line === 1 ? l1 : l2;
+                if (actual === expected) return cb();
+                selectRange(line, 0, actual.length, () =>
+                    deleteSel(() => type(expected, cb, false))
+                );
+            };
             const typePhase = (cb: () => void) => {
-                if (decoy && decoy !== next && Math.random() < BRAINO_CHANCE) {
+                const verified = () => verify(cb);
+                if (decoy && decoy !== next && choreography === 'reconsider') {
                     const dec = wrap(decoy);
                     typeWord(dec, () => {
                         setMoving(false);
                         schedule(
                             () =>
                                 backspace(dec.length, () =>
-                                    schedule(() => typeWord(repl, cb), GAP_MS)
+                                    schedule(() => typeWord(repl, verified), GAP_MS)
                                 ),
                             rand(420, 720)
                         );
                     });
                 } else {
-                    typeWord(repl, cb);
+                    // Typo repair navigates relative to the end of a fresh
+                    // word. A preserved suffix means the caret is mid-word,
+                    // so keep this local insertion clean and predictable.
+                    if (revision.preservedSuffix) {
+                        type(revision.insert, verified, false);
+                    } else {
+                        typeWord(revision.insert, verified);
+                    }
                 }
             };
             // Position tracking carries the format automatically: deleting the
             // word shrinks its range, retyping re-extends it (transfer), and
             // edits to other words just shift it.
-            if (Math.random() < SELECT_CHANCE) {
-                selectRange(line, s, e, () =>
-                    deleteSel(() =>
-                        schedule(() => typePhase(done), rand(70, 170))
+            if (choreography === 'reconsider' && decoy && decoy !== next) {
+                click(line, editEnd, () =>
+                    backspace(span, () =>
+                        schedule(
+                            () => typePhase(done),
+                            timingDelay(plannedTiming, GAP_MS)
+                        )
                     )
                 );
             } else {
-                click(line, e, () =>
-                    backspace(span, () =>
-                        schedule(() => typePhase(done), GAP_MS)
-                    )
+                const operations = compileTextEditOperations(
+                    line,
+                    s,
+                    revision,
+                    choreography
+                );
+                const expectedLines: [string, string] =
+                    line === 1 ? [expected, l2] : [l1, expected];
+                const transaction = simulateEditTransaction(
+                    [l1, l2],
+                    operations,
+                    expectedLines
+                );
+                telemetry.edits[transaction.valid ? 'transaction:valid' : 'transaction:recovery'] =
+                    (telemetry.edits[
+                        transaction.valid ? 'transaction:valid' : 'transaction:recovery'
+                    ] ?? 0) + 1;
+                if (transaction.valid) {
+                    executeOperations(
+                        operations,
+                        () => verify(done),
+                        expectedLines,
+                        plannedTiming
+                    );
+                } else {
+                    const actual = line === 1 ? l1 : l2;
+                    selectRange(line, 0, actual.length, () =>
+                        deleteSel(() => type(expected, () => verify(done), false))
+                    );
+                }
+            }
+        };
+
+        const rewriteHeadline = (
+            nextLine1: string,
+            nextLine2: string,
+            done: () => void
+        ) => {
+            // Formatting belongs to the current wording. Clear it through a
+            // visible selection before a construction rewrite; otherwise the
+            // range collapses during deletion, expands over replacement text,
+            // and then disappears when the new construction commits.
+            if (fmt && fmt.end > fmt.start) {
+                const previous = fmt;
+                selectRange(
+                    previous.line,
+                    previous.start,
+                    previous.end,
+                    () => {
+                        fmt = null;
+                        setFormat(null);
+                        sel = null;
+                        setSelection(null);
+                        telemetry.edits['format:clear-before-rewrite'] =
+                            (telemetry.edits['format:clear-before-rewrite'] ?? 0) +
+                            1;
+                        schedule(
+                            () => rewriteHeadline(nextLine1, nextLine2, done),
+                            quickNotice()
+                        );
+                    }
+                );
+                return;
+            }
+            const plan = compositeEdits.plan(
+                [l1, l2],
+                [nextLine1, nextLine2],
+                headlineWidth,
+                {
+                    subject: nounWord(),
+                    connector: mode === 'stmt' ? CONNECTORS[connIdx] : undefined,
+                    modal: mode === 'q' ? modalText(modalIdx) : undefined,
+                    verb: mode === 'stmt' ? verbStr() : VERBS[verbIdx].base,
+                    object: objectText(objIdx),
+                }
+            );
+            telemetry.edits[`personality:${plan.personality}`] =
+                (telemetry.edits[`personality:${plan.personality}`] ?? 0) + 1;
+            telemetry.edits[`template:${plan.template}`] =
+                (telemetry.edits[`template:${plan.template}`] ?? 0) + 1;
+            behaviorPolicy.record('template', plan.template);
+            behaviorPolicy.record('operation', `personality:${plan.personality}`);
+            const operations = compileCompositeEditOperations(plan);
+            const transaction = simulateEditTransaction(
+                [l1, l2],
+                operations,
+                [nextLine1, nextLine2]
+            );
+            if (!transaction.valid) {
+                return swapWord(
+                    1,
+                    0,
+                    l1.length,
+                    nextLine1,
+                    () =>
+                        swapWord(2, 0, l2.length, nextLine2, done, undefined, 'select-replace'),
+                    undefined,
+                    'select-replace'
                 );
             }
+            telemetry.edits['transaction:composite'] =
+                (telemetry.edits['transaction:composite'] ?? 0) + 1;
+            executeOperations(operations, done, [nextLine1, nextLine2]);
         };
 
         // Pick any fitting alternative instead of walking the list in order.
@@ -1493,15 +2611,17 @@ const TypewriterHeadline = () => {
         const pickFitting = (
             cur: number,
             len: number,
-            build: (i: number) => string
+            build: (i: number) => string,
+            weight: (i: number) => number = () => 1
         ) => {
-            const candidates: number[] = [];
+            const candidates: Array<{ value: number; weight: number }> = [];
             for (let i = 0; i < len; i++) {
                 const candidate = build(i);
-                if (i !== cur && candidate && fits(candidate)) candidates.push(i);
+                if (i !== cur && candidate && fits(candidate)) {
+                    candidates.push({ value: i, weight: weight(i) });
+                }
             }
-            if (!candidates.length) return -1;
-            return candidates[Math.floor(Math.random() * candidates.length)];
+            return weightedChoice(candidates) ?? -1;
         };
 
         // --- composed edits ----------------------------------------------
@@ -1538,25 +2658,19 @@ const TypewriterHeadline = () => {
         const swapNoun = () => {
             // swapping the noun drops any emoji attached to the old noun
             const cand = pickFitting(nounIdx, NOUNS.length, (i) =>
-                mode === 'q' &&
-                !QUESTION_PAIRS.some(
-                    ([noun, obj]) =>
-                        noun === NOUNS[i].word && obj === objectText(objIdx)
-                )
+                !constructionAllows(i, verbIdx, objIdx)
                     ? ''
-                    : mode === 'stmt' && !verbAllowsSubject(verbIdx, i)
-                    ? ''
-                    : !subjectAllowsObject(i, objIdx)
-                    ? ''
-                    : nounAllowed(i)
-                      ? composeL1(i, connIdx, modalIdx, '')
-                      : ''
-            );
-            if (cand < 0) return hold();
+                    : composeL1(i, connIdx, modalIdx, '')
+            , (i) =>
+                QUALITY_WEIGHT[qualityForTriple(i, verbIdx, objIdx)] *
+                trajectory.noveltyWeight(
+                    `${NOUNS[i].word}|${VERBS[verbIdx].base}|${objectText(objIdx)}`
+                ));
+            if (cand < 0) return formatWord();
             const asWord = (i: number) =>
                 mode === 'stmt'
                     ? NOUNS[i].word
-                    : NOUNS[i].word.toLowerCase();
+                    : lowerSubject(NOUNS[i].word);
             const next = asWord(cand);
             // a plausible wrong noun to fumble first
             let decoy: string | undefined;
@@ -1564,14 +2678,7 @@ const TypewriterHeadline = () => {
                 const d = (cand + k) % NOUNS.length;
                 if (
                     d !== nounIdx &&
-                    nounAllowed(d) &&
-                    subjectAllowsObject(d, objIdx) &&
-                    (mode !== 'q' ||
-                        QUESTION_PAIRS.some(
-                            ([noun, obj]) =>
-                                noun === NOUNS[d].word && obj === objectText(objIdx)
-                        )) &&
-                    (mode !== 'stmt' || verbAllowsSubject(verbIdx, d)) &&
+                    constructionAllows(d, verbIdx, objIdx) &&
                     fits(composeL1(d, connIdx, modalIdx, ''))
                 ) {
                     decoy = asWord(d);
@@ -1586,6 +2693,7 @@ const TypewriterHeadline = () => {
                 () => {
                     nounIdx = cand;
                     gNoun = '';
+                    trajectory.remember(currentTrajectoryKey());
                     if (mode === 'stmt') reconcile(hold);
                     else hold();
                 },
@@ -1597,7 +2705,7 @@ const TypewriterHeadline = () => {
             const cand = pickFitting(connIdx, CONNECTORS.length, (i) =>
                 composeL1(nounIdx, i, modalIdx, gNoun)
             );
-            if (cand < 0) return hold();
+            if (cand < 0) return formatWord();
             swapWord(
                 1,
                 connStart(),
@@ -1612,10 +2720,12 @@ const TypewriterHeadline = () => {
 
         const swapModal = () => {
             const cand = pickFitting(modalIdx, MODALS.length, (i) =>
-                composeL1(nounIdx, connIdx, i, gNoun)
+                constructionAllows(nounIdx, verbIdx, objIdx, i)
+                    ? composeL1(nounIdx, connIdx, i, gNoun)
+                    : ''
             );
-            if (cand < 0) return hold();
-            swapWord(1, 5, MODALS[modalIdx].length, MODALS[cand], () => {
+            if (cand < 0) return formatWord();
+            swapWord(1, 0, MODALS[modalIdx].length, modalText(cand), () => {
                 modalIdx = cand;
                 hold();
             });
@@ -1624,28 +2734,46 @@ const TypewriterHeadline = () => {
         // Swap the verb (and re-pick a link it accepts), replacing "<verb><link>"
         // as one unit since a new verb may take a different link.
         const swapVerb = () => {
-            const candidates: Array<{ verbIdx: number; link: string }> = [];
+            const candidates: Array<{
+                value: { verbIdx: number; link: string };
+                weight: number;
+            }> = [];
             for (let ci = 0; ci < VERBS.length; ci++) {
                 if (ci === verbIdx) continue;
                 const links = VERBS[ci].links;
                 for (const lk of links) {
-                    const head = verbForm(VERBS[ci].base, hasS) + lk;
+                    const head =
+                        (mode === 'stmt'
+                            ? verbForm(VERBS[ci].base, hasS)
+                            : VERBS[ci].base) + lk;
                     if (
-                        verbAllowsSubject(ci, nounIdx) &&
-                        subjectAllowsObject(nounIdx, objIdx) &&
-                        verbAllowsObject(ci, objIdx) &&
-                        fits(head + objectText(objIdx) + gObj)
+                        constructionAllows(nounIdx, ci, objIdx) &&
+                        fits(head + objectText(objIdx) + (mode === 'q' ? '?' : '') + gObj)
                     ) {
-                        candidates.push({ verbIdx: ci, link: lk });
+                        candidates.push({
+                            value: { verbIdx: ci, link: lk },
+                            weight:
+                                QUALITY_WEIGHT[qualityForTriple(nounIdx, ci, objIdx)] *
+                                trajectory.noveltyWeight(
+                                    `${NOUNS[nounIdx].word}|${VERBS[ci].base}|${objectText(objIdx)}`
+                                ),
+                        });
                     }
                 }
             }
-            if (!candidates.length) return hold();
-            const cand = candidates[Math.floor(Math.random() * candidates.length)];
-            const head = verbForm(VERBS[cand.verbIdx].base, hasS) + cand.link;
-            swapWord(2, 0, verbStr().length + link.length, head, () => {
+            if (!candidates.length) return formatWord();
+            const cand = weightedChoice(candidates);
+            if (!cand) return formatWord();
+            const head =
+                (mode === 'stmt'
+                    ? verbForm(VERBS[cand.verbIdx].base, hasS)
+                    : VERBS[cand.verbIdx].base) + cand.link;
+            const currentVerb =
+                mode === 'stmt' ? verbStr() : VERBS[verbIdx].base;
+            swapWord(2, 0, currentVerb.length + link.length, head, () => {
                 verbIdx = cand.verbIdx;
                 link = cand.link;
+                trajectory.remember(currentTrajectoryKey());
                 hold();
             });
         };
@@ -1677,23 +2805,20 @@ const TypewriterHeadline = () => {
         };
 
         const swapObject = () => {
-            const head = mode === 'stmt' ? verbStr() + link : 'do' + FOR;
+            const head =
+                (mode === 'stmt' ? verbStr() : VERBS[verbIdx].base) + link;
             const tailQ = mode === 'stmt' ? '' : '?';
             const cand = pickFitting(
                 objIdx,
                 OBJECTS.length,
+                (i) => objectAllowed(i) ? head + objectText(i) + tailQ + gObj : '',
                 (i) =>
-                    mode === 'q' &&
-                    !QUESTION_PAIRS.some(
-                        ([noun, obj]) =>
-                            noun === NOUNS[nounIdx].word && obj === objectText(i)
+                    QUALITY_WEIGHT[qualityForTriple(nounIdx, verbIdx, i)] *
+                    trajectory.noveltyWeight(
+                        `${NOUNS[nounIdx].word}|${VERBS[verbIdx].base}|${objectText(i)}`
                     )
-                        ? ''
-                        : objectAllowed(i)
-                          ? head + objectText(i) + tailQ + gObj
-                          : ''
             );
-            if (cand < 0) return hold();
+            if (cand < 0) return formatWord();
             // a plausible wrong object to fumble first
             let decoy: string | undefined;
             for (let k = 1; k < OBJECTS.length; k++) {
@@ -1714,10 +2839,117 @@ const TypewriterHeadline = () => {
                 objectText(cand),
                 () => {
                     objIdx = cand;
+                    trajectory.remember(currentTrajectoryKey());
                     hold();
                 },
                 decoy
             );
+        };
+
+        // Revise a complete relation in two legible edits. The target is a
+        // prevalidated triple; the temporary verb/object mismatch is repaired
+        // immediately and never reaches `hold`.
+        const coordinatedRevision = () => {
+            const candidates = (TRIPLES_BY_NOUN.get(nounIdx) ?? []).filter(
+                (triple) =>
+                    triple.verbIdx !== verbIdx &&
+                    triple.objIdx !== objIdx &&
+                    constructionAllows(
+                        nounIdx,
+                        triple.verbIdx,
+                        triple.objIdx
+                    )
+            );
+            const fitting = candidates.filter((triple) => {
+                const nextHead =
+                    (mode === 'stmt'
+                        ? verbForm(VERBS[triple.verbIdx].base, hasS)
+                        : VERBS[triple.verbIdx].base) + triple.link;
+                return fits(
+                    nextHead +
+                        objectText(triple.objIdx) +
+                        (mode === 'q' ? '?' : '')
+                );
+            });
+            let target = triplePathQueue.shift();
+            if (!target) {
+                const finalTarget = weightedChoice(
+                    fitting.map((triple) => ({
+                        value: triple,
+                        weight:
+                            QUALITY_WEIGHT[triple.quality] *
+                            trajectory.noveltyWeight(tripleTrajectoryKey(triple)),
+                    }))
+                );
+                if (finalTarget) {
+                    const conceptsFor = (triple: HeadlineTriple) => [
+                        triple.domain,
+                        VERBS[triple.verbIdx].base,
+                        ...OBJECTS[triple.objIdx].kinds,
+                    ];
+                    const source: HeadlineTriple = {
+                        nounIdx,
+                        verbIdx,
+                        objIdx,
+                        link,
+                        quality: qualityForTriple(nounIdx, verbIdx, objIdx),
+                        domain: domainForNoun(nounIdx),
+                    };
+                    const node = (triple: HeadlineTriple) => ({
+                        value: triple,
+                        key: tripleTrajectoryKey(triple),
+                        concepts: conceptsFor(triple),
+                        valid: constructionAllows(
+                            triple.nounIdx,
+                            triple.verbIdx,
+                            triple.objIdx
+                        ),
+                    });
+                    const path = planSemanticPath(
+                        node(source),
+                        node(finalTarget),
+                        fitting.map(node)
+                    );
+                    triplePathQueue = path.slice(1).map(({ value }) => value);
+                    target = triplePathQueue.shift();
+                    if (triplePathQueue.length) {
+                        behaviorPolicy.record('path', 'semantic-bridge');
+                        telemetry.edits['path:semantic-bridge'] =
+                            (telemetry.edits['path:semantic-bridge'] ?? 0) + 1;
+                    }
+                }
+            }
+            if (!target) return mode === 'stmt' ? swapVerb() : swapObject();
+
+            planCoordinatedRevision();
+            const oldVerbLength =
+                (mode === 'stmt' ? verbStr() : VERBS[verbIdx].base).length +
+                link.length;
+            const nextHead =
+                (mode === 'stmt'
+                    ? verbForm(VERBS[target.verbIdx].base, hasS)
+                    : VERBS[target.verbIdx].base) + target.link;
+            swapWord(2, 0, oldVerbLength, nextHead, () => {
+                verbIdx = target.verbIdx;
+                link = target.link;
+                schedule(
+                    () =>
+                        swapWord(
+                            2,
+                            objStart(),
+                            objectText(objIdx).length,
+                            objectText(target.objIdx),
+                            () => {
+                                objIdx = target.objIdx;
+                                trajectory.remember(currentTrajectoryKey());
+                                hold();
+                            },
+                            undefined,
+                            'select-replace'
+                        ),
+                    quickNotice()
+                );
+            }, undefined, 'select-replace');
         };
 
         // --- garnishes: punctuation / emoji, after the noun or the object -----
@@ -1741,7 +2973,7 @@ const TypewriterHeadline = () => {
                 setMoving(true);
                 const s = current();
                 write(s.slice(0, cPos) + t + s.slice(cPos));
-                fmtInsert(cLine, cPos, t.length);
+                fmtInsert(cLine, cPos, t);
                 cPos += t.length;
                 if (place === 'noun') gNoun = t;
                 else gObj = t;
@@ -1790,18 +3022,32 @@ const TypewriterHeadline = () => {
             }
             const roll = Math.random();
             if (roll < 0.34) {
-                // punctuation in statements; a doubled "?" in questions — at end
-                const p =
-                    mode === 'stmt'
-                        ? PUNCTS[Math.floor(Math.random() * PUNCTS.length)]
-                        : '?';
+                // Questions already carry their punctuation. Adding another
+                // question mark reads as accidental duplication, not editing.
+                if (mode === 'q') return hold();
+                const p = PUNCTS[Math.floor(Math.random() * PUNCTS.length)];
                 if (!fits(l2 + p)) return hold();
-                click(2, l2.length, () =>
-                    type(p, () => {
-                        gObj = p;
-                        hold();
-                    })
+                const operations: EditOperation[] = [
+                    {
+                        type: 'replace-punctuation',
+                        line: 2,
+                        from: '',
+                        to: p,
+                    },
+                    { type: 'commit-semantic-state' },
+                ];
+                const transaction = simulateEditTransaction(
+                    [l1, l2],
+                    operations,
+                    [l1, l2 + p]
                 );
+                if (!transaction.valid) return hold();
+                executeOperations(operations, () => {
+                    gObj = p;
+                    telemetry.edits['operation:punctuation'] =
+                        (telemetry.edits['operation:punctuation'] ?? 0) + 1;
+                    hold();
+                }, [l1, l2 + p]);
             } else if (roll < 0.67) {
                 // emoji after the object
                 const t = ' ' + objEmoji();
@@ -1820,30 +3066,17 @@ const TypewriterHeadline = () => {
         // Highlight a content word, then style it bold/italic/underline — or,
         // if one is already styled, reselect it and clear or change it.
         const pickFormatWord = () => {
-            const opts =
-                mode === 'stmt'
-                    ? [
-                          { line: 1 as Line, start: nounStart(), text: nounWord() },
-                          { line: 2 as Line, start: 0, text: verbStr() },
-                          {
-                              line: 2 as Line,
-                              start: objStart(),
-                              text: objectText(objIdx),
-                          },
-                      ]
-                    : [
-                          { line: 1 as Line, start: 5, text: MODALS[modalIdx] },
-                          {
-                              line: 1 as Line,
-                              start: nounStart(),
-                              text: nounWord().toLowerCase(),
-                          },
-                          {
-                              line: 2 as Line,
-                              start: objStart(),
-                              text: objectText(objIdx),
-                          },
-                      ];
+            const opts = getHeadlineFormatSlots(
+                mode === 'stmt' ? 'stmt' : 'q',
+                l1,
+                l2,
+                {
+                    noun: mode === 'stmt' ? nounWord() : lowerSubject(nounWord()),
+                    modal: modalText(modalIdx),
+                    verb: mode === 'stmt' ? verbStr() : VERBS[verbIdx].base,
+                    object: objectText(objIdx),
+                }
+            );
             return opts[Math.floor(Math.random() * opts.length)];
         };
 
@@ -1915,46 +3148,83 @@ const TypewriterHeadline = () => {
                 return;
             }
             const w = pickFormatWord();
-            selectRange(w.line, w.start, w.start + w.text.length, () => {
-                fmt = {
-                    line: w.line,
-                    start: w.start,
-                    end: w.start + w.text.length,
-                    kind: FMT_KINDS[Math.floor(Math.random() * FMT_KINDS.length)],
-                };
-                setFormat(fmt);
-                sel = null;
-                setSelection(null);
-                hold();
-            });
+            const kind = FMT_KINDS[Math.floor(Math.random() * FMT_KINDS.length)];
+            fmt = null;
+            executeOperations(
+                [
+                    {
+                        type: 'transfer-emphasis',
+                        line: w.line,
+                        start: w.start,
+                        end: w.start + w.text.length,
+                    },
+                    { type: 'commit-semantic-state' },
+                ],
+                () => {
+                    if (fmt) {
+                        fmt = { ...fmt, kind };
+                        setFormat(fmt);
+                    }
+                    telemetry.edits['operation:emphasis'] =
+                        (telemetry.edits['operation:emphasis'] ?? 0) + 1;
+                    hold();
+                }
+            );
         };
 
         const switchPhrase = () => {
-            const candidates = PHRASE_PROMPTS.filter(
+            const continuingNarrative = phraseQueue.length > 0;
+            const candidates = (continuingNarrative
+                ? [phraseQueue.shift()!]
+                : PHRASE_PROMPTS
+            ).filter(
                 (p) => fits(p.line1) && fits(p.line2)
             );
             if (!candidates.length) return hold();
-            const prompt = candidates[Math.floor(Math.random() * candidates.length)];
-            click(2, l2.length, () =>
-                backspace(l2.length, () =>
-                    click(1, l1.length, () =>
-                        backspace(l1.length, () => {
-                            mode = 'phrase';
-                            gNoun = '';
-                            gObj = '';
-                            fmt = null;
-                            setFormat(null);
-                            schedule(
-                                () =>
-                                    type(prompt.line1, () =>
-                                        click(2, 0, () => type(prompt.line2, hold))
-                                    ),
-                                GAP_MS
-                            );
-                        })
+            const prompt = narrative.choose(
+                candidates.map((candidate): TrajectoryCandidate<(typeof candidates)[number]> => {
+                    const family: ConstructionFamily = candidate.line1.startsWith(
+                        'What if '
                     )
-                )
+                        ? 'counterfactual'
+                        : candidate.line1.endsWith(' should')
+                          ? 'stance'
+                          : 'reflection';
+                    return {
+                    value: candidate,
+                    key: `phrase|${candidate.line1}|${candidate.line2}`,
+                    subject: candidate.line1,
+                    verb: family,
+                    object: candidate.line2,
+                    domain: 'operations',
+                    family,
+                    quality: 'strong',
+                    energy: familyEnergy(family),
+                    surprise: family === 'counterfactual' ? 0.8 : 0.35,
+                    concepts: [family, candidate.line1, candidate.line2],
+                };
+                })
             );
+            if (!prompt) return hold();
+            phraseFamily = prompt.line1.startsWith('What if ')
+                ? 'counterfactual'
+                : prompt.line1.endsWith(' should')
+                  ? 'stance'
+                  : 'reflection';
+            if (!continuingNarrative) {
+                const followup = NARRATIVE_FOLLOWUPS.get(
+                    `${prompt.line1}\u0000${prompt.line2}`
+                );
+                phraseQueue = followup ? [followup] : [];
+            }
+            rewriteHeadline(prompt.line1, prompt.line2, () => {
+                mode = 'phrase';
+                gNoun = '';
+                gObj = '';
+                fmt = null;
+                setFormat(null);
+                hold();
+            });
         };
 
         // Rewrite the whole headline into the other form. The target lines are
@@ -1971,133 +3241,208 @@ const TypewriterHeadline = () => {
             let linkTo = link;
             let hasTo = hasS;
             if (target === 'stmt') {
-                hasTo = wantsS(nounIdx, connIdx);
+                hasTo = wantsS(nounTo, connIdx);
                 if (!VERBS[verbTo].links.includes(linkTo)) {
                     linkTo = VERBS[verbTo].links[0];
                 }
-                const statement = (v: number, lk: string, o: number) =>
-                    verbForm(VERBS[v].base, hasTo) + lk + objectText(o);
-                const valid = (v: number, lk: string, o: number) =>
-                    verbAllowsSubject(v, nounIdx) &&
-                    subjectAllowsObject(nounIdx, o) &&
-                    verbAllowsObject(v, o) &&
-                    fits(statement(v, lk, o));
-                if (!valid(verbTo, linkTo, objTo)) {
-                    const candidates: Array<{
-                        verbIdx: number;
-                        link: string;
-                        objIdx: number;
-                    }> = [];
-                    for (let vi = 0; vi < VERBS.length; vi++) {
-                        if (!verbAllowsSubject(vi, nounIdx)) continue;
-                        for (const lk of VERBS[vi].links) {
-                            for (let oi = 0; oi < OBJECTS.length; oi++) {
-                                if (
-                                    subjectAllowsObject(nounIdx, oi) &&
-                                    verbAllowsObject(vi, oi) &&
-                                    fits(statement(vi, lk, oi))
-                                ) {
-                                    candidates.push({ verbIdx: vi, link: lk, objIdx: oi });
-                                }
-                            }
+                const statement = (n: number, v: number, lk: string, o: number) =>
+                    verbForm(VERBS[v].base, wantsS(n, connIdx)) + lk + objectText(o);
+                const currentTriple = VALID_TRIPLES.find(
+                    (triple) =>
+                        triple.nounIdx === nounTo &&
+                        triple.verbIdx === verbTo &&
+                        triple.objIdx === objTo &&
+                        triple.link === linkTo
+                );
+                if (
+                    !currentTriple ||
+                    !statementEligible(currentTriple) ||
+                    !fits(statement(nounTo, verbTo, linkTo, objTo))
+                ) {
+                    const start = Math.floor(Math.random() * STATEMENT_POOL.length);
+                    const fitting: TrajectoryCandidate<HeadlineTriple>[] = [];
+                    const seen = new Set<string>();
+                    for (let offset = 0; offset < STATEMENT_POOL.length; offset++) {
+                        const candidate =
+                            STATEMENT_POOL[(start + offset) % STATEMENT_POOL.length];
+                        const key = tripleTrajectoryKey(candidate);
+                        if (
+                            !seen.has(key) &&
+                            fits(
+                                statement(
+                                    candidate.nounIdx,
+                                    candidate.verbIdx,
+                                    candidate.link,
+                                    candidate.objIdx
+                                )
+                            )
+                        ) {
+                            seen.add(key);
+                            fitting.push(
+                                trajectoryCandidate(
+                                    candidate,
+                                    candidate,
+                                    'statement',
+                                    key
+                                )
+                            );
+                            if (fitting.length >= candidateBudget()) break;
                         }
                     }
-                    if (!candidates.length) return hold();
-                    const cand =
-                        candidates[Math.floor(Math.random() * candidates.length)];
+                    const cand = narrative.choose(fitting);
+                    if (!cand) return hold();
+                    nounTo = cand.nounIdx;
                     verbTo = cand.verbIdx;
                     linkTo = cand.link;
                     objTo = cand.objIdx;
                 }
+                hasTo = wantsS(nounTo, connIdx);
                 nl1 = `${NOUNS[nounTo].word} ${CONNECTORS[connIdx]}`;
-                nl2 = statement(verbTo, linkTo, objTo);
+                nl2 = statement(nounTo, verbTo, linkTo, objTo);
             } else {
-                const pair = pickQuestionPair(nounTo, objTo);
-                if (pair) {
-                    nounTo = pair.nounIdx;
-                    objTo = pair.objIdx;
-                } else {
-                    if (QUESTION_SUBJECT_BLOCKLIST.has(NOUNS[nounTo].word)) {
-                        const buildNoun = (i: number) =>
-                            !QUESTION_SUBJECT_BLOCKLIST.has(NOUNS[i].word)
-                                ? `What ${MODALS[modalTo]} ${NOUNS[i].word.toLowerCase()}`
-                                : '';
-                        const c = pickFitting(nounTo, NOUNS.length, buildNoun);
-                        if (c >= 0) nounTo = c;
-                    }
-                    if (OBJECTS[objTo].kinds.includes('abstract')) {
-                        const buildObj = (i: number) =>
-                            !OBJECTS[i].kinds.includes('abstract')
-                                ? `do${FOR}${objectText(i)}?`
-                                : '';
-                        const c = pickFitting(objTo, OBJECTS.length, buildObj);
-                        if (c >= 0) objTo = c;
-                    }
-                }
-                const build = (i: number) =>
-                    `What ${MODALS[i]} ${NOUNS[nounTo].word.toLowerCase()}`;
-                if (!fits(build(modalTo))) {
-                    const c = pickFitting(modalTo, MODALS.length, build);
-                    if (c >= 0) modalTo = c;
-                }
-                nl1 = build(modalTo);
-                nl2 = `do${FOR}${objectText(objTo)}?`;
+                const question = pickQuestion();
+                if (!question) return hold();
+                nounTo = question.nounIdx;
+                verbTo = question.verbIdx;
+                objTo = question.objIdx;
+                linkTo = question.link;
+                nl1 = question.line1;
+                nl2 = question.line2;
             }
             if (!fits(nl1) || !fits(nl2)) return hold(); // can't fit — skip it
 
-            click(2, l2.length, () =>
-                backspace(l2.length, () =>
-                    click(1, l1.length, () =>
-                        backspace(l1.length, () => {
-                            mode = target;
-                            gNoun = '';
-                            gObj = '';
-                            fmt = null;
-                            setFormat(null);
-                            nounIdx = nounTo;
-                            hasS = hasTo;
-                            verbIdx = verbTo;
-                            link = linkTo;
-                            objIdx = objTo;
-                            modalIdx = modalTo;
-                            schedule(
-                                () =>
-                                    type(nl1, () =>
-                                        click(2, 0, () => type(nl2, hold))
-                                    ),
-                                GAP_MS
-                            );
-                        })
-                    )
-                )
+            rewriteHeadline(nl1, nl2, () => {
+                mode = target;
+                gNoun = '';
+                gObj = '';
+                fmt = null;
+                setFormat(null);
+                nounIdx = nounTo;
+                hasS = hasTo;
+                verbIdx = verbTo;
+                link = linkTo;
+                objIdx = objTo;
+                modalIdx = modalTo;
+                hold();
+            });
+        };
+
+        const canSwapNoun = () =>
+            (TRIPLES_BY_VERB.get(verbIdx) ?? []).some(
+                (triple) =>
+                    triple.objIdx === objIdx &&
+                    triple.nounIdx !== nounIdx &&
+                    constructionAllows(triple.nounIdx, verbIdx, objIdx)
+            );
+        const canSwapVerb = () =>
+            (TRIPLES_BY_NOUN.get(nounIdx) ?? []).some(
+                (triple) => {
+                    if (
+                        triple.verbIdx === verbIdx ||
+                        triple.objIdx !== objIdx
+                    ) return false;
+                    return constructionAllows(nounIdx, triple.verbIdx, objIdx);
+                }
+            );
+        const canSwapObject = () => {
+            return (TRIPLES_BY_NOUN.get(nounIdx) ?? []).some(
+                (triple) =>
+                    triple.verbIdx === verbIdx &&
+                    triple.objIdx !== objIdx &&
+                    objectAllowed(triple.objIdx)
             );
         };
+        const canSwapConnector = () =>
+            CONNECTORS.some((_, i) => i !== connIdx);
+        const canSwapModal = () =>
+            MODALS.some(
+                (_, i) =>
+                    i !== modalIdx &&
+                    constructionAllows(nounIdx, verbIdx, objIdx, i)
+            );
 
         function hold() {
             setMoving(false);
+            fmtAffinity = null;
+            const family: ConstructionFamily =
+                mode === 'stmt' ? 'statement' : mode === 'q' ? 'question' : phraseFamily;
+            const domain = domainForNoun(nounIdx);
+            telemetry.states++;
+            telemetry.modes[mode]++;
+            telemetry.families[family] = (telemetry.families[family] ?? 0) + 1;
+            telemetry.domains[domain] = (telemetry.domains[domain] ?? 0) + 1;
+            if (speed < 1 && rootRef.current) {
+                rootRef.current.dataset.telemetry = JSON.stringify(telemetry);
+                rootRef.current.dataset.planner = JSON.stringify(narrative.snapshot());
+                rootRef.current.dataset.behaviorPolicy = JSON.stringify(
+                    behaviorPolicy.snapshot()
+                );
+            }
             schedule(() => {
-                if (mode === 'phrase') return switchMode();
+                if (mode === 'phrase') {
+                    return phraseQueue.length ? switchPhrase() : switchMode();
+                }
+                if (triplePathQueue.length) return coordinatedRevision();
                 // if a format has smeared past its word, sometimes go fix it
                 if (messyFmt() && Math.random() < 0.22) return tidyFormat();
-                const r = Math.random();
                 if (mode === 'stmt') {
-                    const canLink = VERBS[verbIdx].links.length > 1;
-                    if (r < 0.18) swapVerb();
-                    else if (r < 0.35) swapObject();
-                    else if (r < 0.49) swapNoun();
-                    else if (r < 0.61) swapConnector();
-                    else if (r < 0.74) garnish();
-                    else if (r < 0.83) formatWord();
-                    else if (r < 0.89) canLink ? swapLink() : swapObject();
-                    else if (r < 0.95) switchPhrase();
-                    else switchMode();
+                    const content: Array<{
+                        value: () => void;
+                        weight: number;
+                    }> = [
+                        ...(canSwapVerb() ? [{ value: swapVerb, weight: 18 }] : []),
+                        ...(canSwapObject() ? [{ value: swapObject, weight: 17 }] : []),
+                        ...(canSwapNoun() ? [{ value: swapNoun, weight: 14 }] : []),
+                        { value: coordinatedRevision, weight: 8 },
+                        ...(canSwapConnector()
+                            ? [{ value: swapConnector, weight: 12 }]
+                            : []),
+                    ];
+                    const decoration = [
+                        { value: garnish, weight: 13 },
+                        { value: formatWord, weight: 4 },
+                    ];
+                    const transitions = [
+                        ...(VERBS[verbIdx].links.length > 1
+                            ? [{ value: swapLink, weight: 6 }]
+                            : []),
+                        { value: switchPhrase, weight: 6 },
+                        { value: switchMode, weight: 5 },
+                    ];
+                    const groups = [
+                        ...(content.length
+                            ? [{ value: () => weightedChoice(content)?.(), weight: 61 }]
+                            : []),
+                        { value: () => weightedChoice(decoration)?.(), weight: 15 },
+                        { value: () => weightedChoice(transitions)?.(), weight: 24 },
+                    ];
+                    weightedChoice(groups)?.();
                 } else {
-                    if (r < 0.3) swapObject();
-                    else if (r < 0.5) swapNoun();
-                    else if (r < 0.67) swapModal();
-                    else if (r < 0.81) garnish();
-                    else if (r < 0.9) formatWord();
-                    else switchMode();
+                    const content: Array<{
+                        value: () => void;
+                        weight: number;
+                    }> = [
+                        ...(canSwapObject() ? [{ value: swapObject, weight: 24 }] : []),
+                        ...(canSwapNoun() ? [{ value: swapNoun, weight: 18 }] : []),
+                        ...(canSwapVerb() ? [{ value: swapVerb, weight: 16 }] : []),
+                        ...(canSwapModal() ? [{ value: swapModal, weight: 12 }] : []),
+                        { value: coordinatedRevision, weight: 9 },
+                    ];
+                    const decoration = [
+                        { value: garnish, weight: 11 },
+                        { value: formatWord, weight: 4 },
+                    ];
+                    const transitions = [
+                        { value: switchMode, weight: 10 },
+                    ];
+                    const groups = [
+                        ...(content.length
+                            ? [{ value: () => weightedChoice(content)?.(), weight: 70 }]
+                            : []),
+                        { value: () => weightedChoice(decoration)?.(), weight: 12 },
+                        { value: () => weightedChoice(transitions)?.(), weight: 18 },
+                    ];
+                    weightedChoice(groups)?.();
                 }
             }, HOLD_MS);
         }
@@ -2106,12 +3451,20 @@ const TypewriterHeadline = () => {
         // return. Combines the Page Visibility API with an IntersectionObserver.
         let tabHidden = document.hidden;
         let offScreen = false;
-        const sync = () => setRunning(!tabHidden && !offScreen);
+        let manuallyPaused = false;
+        const sync = () => setRunning(!tabHidden && !offScreen && !manuallyPaused);
         const onVis = () => {
             tabHidden = document.hidden;
             sync();
         };
         document.addEventListener('visibilitychange', onVis);
+        const onMotion = (event: Event) => {
+            manuallyPaused = Boolean(
+                (event as CustomEvent<{ paused?: boolean }>).detail?.paused
+            );
+            sync();
+        };
+        window.addEventListener('headline-motion', onMotion);
         let io: IntersectionObserver | null = null;
         const el = rootRef.current;
         if (el && 'IntersectionObserver' in window) {
@@ -2127,65 +3480,55 @@ const TypewriterHeadline = () => {
 
         schedule(hold, HOLD_MS);
         return () => {
+            disposed = true;
             clearTimeout(timer);
+            activeRuntime?.cancel();
+            fitResizeObserver?.disconnect();
             document.removeEventListener('visibilitychange', onVis);
+            window.removeEventListener('headline-motion', onMotion);
             io?.disconnect();
         };
     }, []);
 
-    // Render a line split into runs, styling the selection highlight and any
-    // formatted word, with the caret placed at its position.
-    const renderLine = (lineNum: Line, text: string) => {
-        const caretVisible = caretLine === lineNum;
-        const cp = caretVisible ? caretPos : text.length;
-        const selR =
-            selection && selection.line === lineNum
-                ? [selection.start, selection.end]
-                : null;
-        let fmtR: [number, number] | null = null;
-        if (format && format.line === lineNum && format.end > format.start) {
-            fmtR = [
-                Math.min(format.start, text.length),
-                Math.min(format.end, text.length),
-            ];
-        }
-        const cuts = new Set<number>([0, text.length, cp]);
-        if (selR) cuts.add(selR[0]), cuts.add(selR[1]);
-        if (fmtR) cuts.add(fmtR[0]), cuts.add(fmtR[1]);
-        const pts = [...cuts]
-            .filter((n) => n >= 0 && n <= text.length)
-            .sort((a, b) => a - b);
-        const out: React.ReactNode[] = [];
-        for (let i = 0; i < pts.length; i++) {
-            const a = pts[i];
-            if (a === cp)
-                out.push(
-                    <Caret
-                        key={`car${lineNum}`}
-                        visible={caretVisible}
-                        moving={moving}
-                    />
-                );
-            const b = pts[i + 1];
-            if (b === undefined || b === a) continue;
-            const cls = ['tw-word'];
-            if (selR && a >= selR[0] && b <= selR[1] && selR[1] > selR[0])
-                cls.push('tw-sel');
-            if (fmtR && a >= fmtR[0] && b <= fmtR[1]) cls.push(`tw-${format!.kind}`);
-            out.push(
-                <span key={`${lineNum}-${a}`} className={cls.join(' ')}>
-                    {text.slice(a, b)}
-                </span>
-            );
-        }
-        return out;
-    };
-
     return (
-        <span className="tw" aria-hidden="true" ref={rootRef}>
-            <span className="tw-line1">{renderLine(1, line1)}</span>
+        <span
+            className="tw"
+            aria-hidden="true"
+            ref={rootRef}
+            {...(testMode
+                ? {
+                      'data-line1': line1,
+                      'data-line2': line2,
+                      'data-moving': moving ? 'true' : 'false',
+                      'data-caret': `${caretLine}:${caretPos}`,
+                      'data-selection': selection
+                          ? JSON.stringify(selection)
+                          : '',
+                      'data-format': format ? JSON.stringify(format) : '',
+                  }
+                : {})}
+        >
+            <span className="tw-line1">
+                <HeadlineLineRuns
+                    lineNum={1}
+                    text={line1}
+                    caretVisible={caretLine === 1}
+                    caretPosition={caretLine === 1 ? caretPos : line1.length}
+                    moving={caretLine === 1 && moving}
+                    selection={selection?.line === 1 ? selection : null}
+                    format={format?.line === 1 ? format : null}
+                />
+            </span>
             <em className="tw-line2" ref={line2Ref}>
-                {renderLine(2, line2)}
+                <HeadlineLineRuns
+                    lineNum={2}
+                    text={line2}
+                    caretVisible={caretLine === 2}
+                    caretPosition={caretLine === 2 ? caretPos : line2.length}
+                    moving={caretLine === 2 && moving}
+                    selection={selection?.line === 2 ? selection : null}
+                    format={format?.line === 2 ? format : null}
+                />
             </em>
             <span className="tw-measure" ref={measureRef} aria-hidden="true" />
             {/* Design-tool selection handles around the text area. */}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import KeycapSurface from "./KeycapSurface";
 
 type FormStatus = "idle" | "sending" | "sent" | "error";
 
@@ -34,7 +35,7 @@ const ContactForm = () => {
   if (status === "sent") {
     return (
       <div className="form-status form-status-ok" role="status">
-        Got it. I\u2019ll respond within a day.
+        Thanks—your message was sent.
       </div>
     );
   }
@@ -49,7 +50,7 @@ const ContactForm = () => {
             type="text"
             required
             maxLength={200}
-            autoComplete="off"
+            autoComplete="name"
           />
         </label>
         <label>
@@ -59,7 +60,7 @@ const ContactForm = () => {
             type="email"
             required
             maxLength={200}
-            autoComplete="off"
+            autoComplete="email"
           />
         </label>
       </div>
@@ -69,9 +70,10 @@ const ContactForm = () => {
       </label>
       <button
         type="submit"
-        className="btn btn-primary"
+        className="btn btn-coral"
         disabled={status === "sending"}
       >
+        <KeycapSurface />
         <span className="btn-cap">
           {status === "sending" ? "Sending…" : "Send"}
         </span>

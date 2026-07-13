@@ -7,15 +7,15 @@ import Navbar from '../Navbar';
 import Footer from '../Footer';
 
 const SITE_URL = 'https://timcis.com';
-const DEFAULT_TITLE = 'Tim Cisneros | Developer & Automation Engineer';
+const DEFAULT_TITLE = 'Tim Cisneros | Full-Stack Software Developer';
 const DEFAULT_DESCRIPTION =
-    'Full-stack developer specializing in React, Next.js, AWS, and business process automation. Digital Media Producer at TimCis Media; formerly a Solutions Engineer at Bitwise Industries.';
+    'Full-stack software developer specializing in TypeScript, React, Next.js, Vue.js, Node.js, AWS, and business process automation. Builds client software through TimCis Media; formerly a Solutions Engineer at Bitwise Industries.';
 
 const PERSON_SCHEMA = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: 'Tim Cisneros',
-    jobTitle: 'Developer & Automation Engineer',
+    jobTitle: 'Full-Stack Software Developer',
     url: SITE_URL,
     email: 'mailto:tcisneros.cis@gmail.com',
     address: {
@@ -42,7 +42,7 @@ const MainLayout = ({
     title = DEFAULT_TITLE,
     description = DEFAULT_DESCRIPTION,
     ogTitle = 'Tim Cisneros',
-    ogSubtitle = 'Developer & Automation Engineer',
+    ogSubtitle = 'Full-Stack Software Developer',
 }: MainLayoutProps) => {
     const router = useRouter();
     const path = router.asPath.split('#')[0].split('?')[0];
@@ -60,12 +60,12 @@ const MainLayout = ({
                 <meta
                     name="theme-color"
                     media="(prefers-color-scheme: dark)"
-                    content="#0a0e13"
+                    content="#131314"
                 />
                 <meta
                     name="theme-color"
                     media="(prefers-color-scheme: light)"
-                    content="#f7f9fb"
+                    content="#f8f9fa"
                 />
                 <meta property="og:type" content="website" />
                 <meta property="og:title" content={title} />

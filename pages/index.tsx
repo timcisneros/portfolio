@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import MainLayout from "../components/layouts/MainLayout";
 import HeroDiagram from "../components/HeroDiagram";
+import KeycapSurface from "../components/KeycapSurface";
 import TypewriterHeadline from "../components/TypewriterHeadline";
 import { renderInline } from "../components/richText";
 import FeaturedProject from "../components/FeaturedProject";
@@ -17,43 +18,65 @@ import {
   ArrowRightIcon,
 } from "../components/Icons";
 import {
-  featuredProjects,
-  systemsProjects,
+  leadProjects,
+  supportingProjects,
   moreProjects,
   skills,
   experience,
-  certifications,
+  credentials,
 } from "../data/projects";
 
 function Home() {
+  const [headlinePaused, setHeadlinePaused] = useState(false);
+  const toggleHeadline = () => {
+    const paused = !headlinePaused;
+    setHeadlinePaused(paused);
+    window.dispatchEvent(
+      new CustomEvent("headline-motion", { detail: { paused } }),
+    );
+  };
+
   return (
     <MainLayout>
       <header className="hero">
         <div className="container hero-inner">
           <div className="hero-copy">
-            <h1 aria-label="Software that works for you.">
-              <TypewriterHeadline />
-            </h1>
+            <div className="hero-headline">
+              <h1 aria-label="Software that works for you.">
+                <TypewriterHeadline />
+              </h1>
+              <button
+                type="button"
+                className="headline-motion-toggle"
+                onClick={toggleHeadline}
+                aria-label={`${headlinePaused ? "Resume" : "Pause"} headline animation`}
+                title={`${headlinePaused ? "Resume" : "Pause"} headline animation`}
+              >
+                <span aria-hidden="true">{headlinePaused ? "▶" : "⏸"}</span>
+              </button>
+            </div>
             <p className="hero-sub">
-              I&apos;m Tim, a JavaScript developer who&apos;s spent the last 7
-              years building full-stack apps on React, Next.js, and AWS,
-              automating business processes, and building tools that save people
-              time. Currently a Digital Media Producer at TimCis Media, and
-              formerly a Solutions Engineer at Bitwise Industries.
+              I&apos;m Tim, a full-stack software developer building applications
+              that automate operational work, using TypeScript, React, Vue.js,
+              Node.js, and AWS. I currently build and maintain client software
+              through TimCis Media.
             </p>
             <div className="hero-actions">
               <a href="#projects" className="btn btn-primary">
+                <KeycapSurface />
                 <span className="btn-cap">My projects</span>
               </a>
 
               <a href="/Timothy-Cisneros-Resume.pdf" className="btn btn-ghost">
+                <KeycapSurface />
                 <span className="btn-cap">
                   <DownloadIcon />
                   Resume
                 </span>
               </a>
 
-              <a href="#contact" className="btn btn-ghost">
+              <a href="#contact" className="btn btn-gray">
+                <KeycapSurface />
                 <span className="btn-cap">
                   <MailIcon />
                   Email me
@@ -65,7 +88,24 @@ function Home() {
         </div>
       </header>
 
-      <section id="projects" className="section section-grid">
+      <section className="proof-strip" aria-label="Professional highlights">
+        <div className="container proof-grid">
+          <div>
+            <strong>Two promotions</strong>
+            <span>Support to workforce analytics and quality assurance</span>
+          </div>
+          <div>
+            <strong>Enterprise delivery</strong>
+            <span>AWS applications and document-process automation</span>
+          </div>
+          <div>
+            <strong>End-to-end ownership</strong>
+            <span>Interfaces, APIs, data, deployment, and maintenance</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="projects" className="section">
         <div className="container">
           <p className="section-label">Projects</p>
           <h2 className="section-title">Built for real use</h2>
@@ -74,23 +114,9 @@ function Home() {
             to solve. Read the walkthroughs or jump straight into the live
             demos.
           </p>
-          {featuredProjects.map((project) => (
+          {leadProjects.map((project) => (
             <FeaturedProject key={project.id} project={project} />
           ))}
-          {systemsProjects.map((project) => (
-            <FeaturedProject key={project.id} project={project} />
-          ))}
-          <div className="more-projects">
-            <p className="section-label">More projects</p>
-            <p className="section-intro">
-              Smaller builds, all with live demos and source.
-            </p>
-            <div className="project-grid">
-              {moreProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -99,9 +125,9 @@ function Home() {
           <p className="section-label">Experience</p>
           <h2 className="section-title">Where I&apos;ve worked</h2>
           <p className="section-intro">
-            I&apos;ve worked across enterprise solutions engineering, freelance
-            development, and workforce analytics. Automation has been the
-            through line.
+            I&apos;ve worked across enterprise solutions engineering, client
+            software delivery, and workforce analytics. Automation has been
+            the through line.
           </p>
           <div className="xp-list">
             {experience.map((job) => (
@@ -109,6 +135,7 @@ function Home() {
                 <div className="xp-meta">
                   <h3>{job.role}</h3>
                   <p className="xp-company">{job.company}</p>
+                  {job.context && <p className="xp-context">{job.context}</p>}
                   <p className="xp-period">
                     {job.period}
                     <br />
@@ -125,6 +152,7 @@ function Home() {
           </div>
           <div className="xp-cta">
             <a href="/Timothy-Cisneros-Resume.pdf" className="btn btn-ghost">
+              <KeycapSurface />
               <span className="btn-cap">
                 <DownloadIcon /> Download resume
               </span>
@@ -133,18 +161,46 @@ function Home() {
         </div>
       </section>
 
-      <section id="skills" className="section section-grid">
+      <section id="supporting-work" className="section supporting-work">
+        <div className="container">
+          <p className="section-label">More project evidence</p>
+          <h2 className="section-title">Product and specialist depth</h2>
+          <p className="section-intro">
+            Two additional case studies show constrained product implementation
+            and evidence-driven debugging outside the primary application stack.
+          </p>
+          {supportingProjects.map((project) => (
+            <FeaturedProject key={project.id} project={project} />
+          ))}
+          <div className="more-projects">
+            <p className="section-label">Smaller builds</p>
+            <p className="section-intro">
+              Focused applications with live demos and public source.
+            </p>
+            <div className="project-grid">
+              {moreProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="skills" className="section">
         <div className="container">
           <p className="section-label">Skills</p>
           <h2 className="section-title">What I work with</h2>
           <p className="section-intro">
-            I work mostly in React and Next.js on AWS. When the mockups are mine
-            too, I reach for Figma or Sketch.
+            Depth matters more than a flat keyword list. These groups distinguish
+            my everyday application stack from professional delivery experience,
+            public project work, and supporting tools.
           </p>
           <div className="skills-grid">
             {skills.map((group) => (
               <div key={group.group} className="skill-group">
+                <span className="skill-level">{group.level}</span>
                 <h3>{group.group}</h3>
+                <p>{group.description}</p>
                 <div className="tag-row">
                   {group.items.map((item) => (
                     <span key={item} className="tag">
@@ -156,13 +212,13 @@ function Home() {
             ))}
           </div>
 
-          <div className="certs">
-            <p className="section-label">Certifications</p>
-            <div className="certs-grid">
-              {certifications.map((cert) => (
-                <div key={cert.name} className="cert-card">
-                  <h3>{cert.name}</h3>
-                  <p>{cert.detail}</p>
+          <div className="credentials">
+            <p className="section-label">Credentials &amp; platform training</p>
+            <div className="credentials-grid">
+              {credentials.map((credential) => (
+                <div key={credential.name} className="credential-card">
+                  <h3>{credential.name}</h3>
+                  <p>{credential.detail}</p>
                 </div>
               ))}
             </div>
@@ -172,11 +228,12 @@ function Home() {
 
       <section id="ai" className="section">
         <div className="container">
-          <p className="section-label">AI</p>
-          <h2 className="section-title">How I work with AI</h2>
+          <p className="section-label">Engineering practice</p>
+          <h2 className="section-title">How I validate AI-assisted work</h2>
           <p className="section-intro">
-            I work with AI agents daily. The cards below link to real files in
-            my repos.
+            I use agents as implementation tools, then validate their output
+            against explicit constraints, inspectable evidence, and automated
+            checks. Each example below links to the implementation in source.
           </p>
           <div className="ai-grid">
             <a
@@ -214,25 +271,24 @@ function Home() {
             </a>
             <a
               className="ai-card"
-              href="https://github.com/timcisneros/my-youtube/blob/master/CLAUDE.md"
+              href="https://github.com/timcisneros/ticket-system/blob/master/scripts/codex-verify.js"
               target="_blank"
               rel="noreferrer"
             >
-              <h3>Machine-readable briefs</h3>
+              <h3>Verification gates</h3>
               <p>
-                Every project carries a machine-readable brief (CLAUDE.md,
-                AGENTS.md) documenting stack, architecture, and constraints. An
-                agent joins the project the way a new teammate would: informed.
+                Agent-produced changes must pass build, workflow, postcondition,
+                endurance, and regression checks before they are accepted.
               </p>
               <span className="ai-card-file">
-                my-youtube/CLAUDE.md <ArrowRightIcon />
+                ticket-system/scripts/codex-verify.js <ArrowRightIcon />
               </span>
             </a>
           </div>
         </div>
       </section>
 
-      <section id="about" className="section section-grid">
+      <section id="about" className="section">
         <div className="container">
           <p className="section-label">About</p>
           <h2 className="section-title">Hi, I&apos;m Tim</h2>
@@ -248,8 +304,7 @@ function Home() {
             <div className="about-body">
               <p>
                 At Conduent I used VBA and JavaScript to automate workforce
-                reports I was compiling by hand and got promoted three times for
-                it.
+                reports I was compiling by hand and got promoted twice for it.
               </p>
               <p>
                 At Bitwise Industries I was a Solutions Engineer shipping
@@ -263,13 +318,14 @@ function Home() {
               </p>
               <p>
                 These days I build business applications for clients through
-                TimCis Media, my own React, Express, and AWS serverless
-                practice.
+                TimCis Media, where my digital production role includes React,
+                Express, and AWS serverless software delivery.
               </p>
               <p>
-                I&apos;m based in California, AWS and DocuSign CLM certified.
-                I&apos;m looking for full-stack web development or business
-                process automation roles.
+                I&apos;m based in California. My platform training includes AWS
+                Cloud Practitioner and DocuSign CLM Implementation.
+                I&apos;m looking for full-stack engineering, internal-tools, or
+                business-process automation roles.
               </p>
             </div>
           </div>
@@ -280,35 +336,33 @@ function Home() {
         <div className="container">
           <h2 className="section-title">Get in touch</h2>
           <p>
-            I&apos;m looking for full-stack web development or automation roles.
+            I&apos;m looking for full-stack engineering, internal-tools, or
+            automation roles.
             If that sounds like your team, my inbox is open.
           </p>
           <ContactForm />
-          <div className="contact-actions">
-            <a href="/Timothy-Cisneros-Resume.pdf" className="btn btn-ghost">
-              <span className="btn-cap">
-                <DownloadIcon /> Resume
-              </span>
+          <div className="contact-links">
+            <a href="mailto:tcisneros.cis@gmail.com" className="contact-link">
+              <MailIcon /> Email
+            </a>
+            <a href="/Timothy-Cisneros-Resume.pdf" className="contact-link">
+              <DownloadIcon /> Resume
             </a>
             <a
               href="https://github.com/timcisneros"
               target="_blank"
               rel="noreferrer"
-              className="btn btn-ghost"
+              className="contact-link"
             >
-              <span className="btn-cap">
-                <GitHubIcon width={16} height={16} /> GitHub
-              </span>
+              <GitHubIcon width={16} height={16} /> GitHub
             </a>
             <a
               href="https://www.linkedin.com/in/timcisneros/"
               target="_blank"
               rel="noreferrer"
-              className="btn btn-ghost"
+              className="contact-link"
             >
-              <span className="btn-cap">
-                <LinkedInIcon width={16} height={16} /> LinkedIn
-              </span>
+              <LinkedInIcon width={16} height={16} /> LinkedIn
             </a>
           </div>
         </div>

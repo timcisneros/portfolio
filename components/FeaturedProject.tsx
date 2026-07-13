@@ -18,7 +18,7 @@ const FeaturedProject = ({ project }: { project: ShowcaseProject }) => {
     );
 
     return (
-        <article className="featured">
+        <article className="featured" id={`project-${project.id}`}>
             {project.caseStudy ? (
                 <Link
                     href={project.caseStudy}

@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import type { GetStaticPaths, GetStaticProps } from "next";
 import MainLayout from "../../components/layouts/MainLayout";
+import KeycapSurface from "../../components/KeycapSurface";
 import {
   GitHubIcon,
   ExternalIcon,
@@ -99,6 +100,18 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
               </a>
             ))}
           </div>
+          <dl className="cs-overview" aria-label={`${study.name} project summary`}>
+            {study.overview.map((item) => (
+              <div key={item.label}>
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <aside className="cs-employer-value" aria-label="What this demonstrates">
+            <strong>What this demonstrates</strong>
+            <p>{study.employerValue}</p>
+          </aside>
           <div className="cs-intro">
             {study.intro.map((paragraph) => (
               <p key={paragraph.slice(0, 24)}>{renderInline(paragraph)}</p>
@@ -107,7 +120,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
         </div>
       </header>
 
-      <section className="section section-grid">
+      <section className="section">
         <div className="container">
           <p className="section-label">Walkthrough</p>
           {study.steps.map((step, index) => (
@@ -146,7 +159,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
             </div>
             <p className="section-label cs-artifacts-label">In the repo</p>
             <ul className="cs-artifacts">
-              {study.deepDive.artifacts.map((artifact) => (
+              {study.deepDive.artifacts.slice(0, 3).map((artifact) => (
                 <li key={artifact.href}>
                   <a
                     href={artifact.href}
@@ -162,6 +175,30 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                 </li>
               ))}
             </ul>
+            {study.deepDive.artifacts.length > 3 && (
+              <details className="cs-artifacts-more">
+                <summary>
+                  View {study.deepDive.artifacts.length - 3} more implementation artifacts
+                </summary>
+                <ul className="cs-artifacts">
+                  {study.deepDive.artifacts.slice(3).map((artifact) => (
+                    <li key={artifact.href}>
+                      <a
+                        href={artifact.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="cs-artifact-link"
+                      >
+                        <GitHubIcon width={15} height={15} />
+                        <code>{artifact.label}</code>
+                        <ArrowRightIcon />
+                      </a>
+                      <span className="cs-artifact-note">{artifact.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
         </section>
       )}
@@ -183,6 +220,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                   rel="noreferrer"
                   className="btn btn-primary"
                 >
+                  <KeycapSurface />
                   <span className="btn-cap">
                     <ExternalIcon /> Try {study.name} live
                   </span>
@@ -193,6 +231,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                   rel="noreferrer"
                   className="btn btn-ghost"
                 >
+                  <KeycapSurface />
                   <span className="btn-cap">
                     <GitHubIcon width={16} height={16} /> View the source
                   </span>
@@ -205,6 +244,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                 rel="noreferrer"
                 className="btn btn-primary"
               >
+                <KeycapSurface />
                 <span className="btn-cap">
                   <GitHubIcon width={16} height={16} /> View source on GitHub
                 </span>
@@ -240,6 +280,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
               href="mailto:tcisneros.cis@gmail.com"
               className="btn btn-primary"
             >
+              <KeycapSurface />
               <span className="btn-cap">Get in touch</span>
             </a>
           </div>

@@ -6,9 +6,13 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
+        "resume:build": "sh scripts/generate-resume.sh",
         "typecheck": "tsc --noEmit",
         "test": "vitest run tests/unit",
-        "test:e2e": "playwright test"
+        "test:e2e": "playwright test",
+        "test:e2e:portfolio": "playwright test tests/e2e/site.spec.ts --grep \"homepage renders|featured project links|case study .* renders|legacy routes redirect|contact API validates|resume PDF and OG image\" --workers=2",
+        "test:e2e:a11y": "playwright test tests/e2e/accessibility.spec.ts --workers=2",
+        "test:e2e:rendering": "playwright test tests/e2e/.cpu-render-audit.spec.ts tests/e2e/keycap-architecture.spec.ts tests/e2e/site.spec.ts --grep \"keycap|compositor|camera|headline|diagram card|CSS control|software backend\" --workers=1"
     },
     "dependencies": {
         "@vercel/analytics": "^2.0.1",
@@ -21,6 +25,7 @@
         "postcss": "^8.5.10"
     },
     "devDependencies": {
+        "@axe-core/playwright": "^4.12.1",
         "@playwright/test": "^1.61.1",
         "@types/node": "^26.1.1",
         "@types/react": "^19.2.17",

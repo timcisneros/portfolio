@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="author" content="Timothy Cisneros">
+  <meta name="description" content="Full-stack software developer résumé for Timothy Cisneros">
+  <title>Timothy Cisneros — Full-Stack Software Developer</title>
+  <style>
+    @page { size: letter; margin: 0.48in 0.58in; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #151515;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9pt;
+      line-height: 1.2;
+    }
+    h1 { margin: 0; font-size: 22pt; line-height: 1; letter-spacing: -0.4pt; }
+    .headline { margin: 4px 0 5px; font-size: 11.5pt; font-weight: 700; }
+    .contact { margin: 0 0 7px; font-size: 8.7pt; }
+    a { color: #151515; text-decoration: none; }
+    h2 {
+      margin: 6px 0 2px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #555;
+      font-size: 10.5pt;
+      letter-spacing: 0.4pt;
+      text-transform: uppercase;
+    }
+    p { margin: 0 0 2px; }
+    .skills p { margin-bottom: 1px; }
+    .entry { margin-bottom: 3px; }
+    .entry-head { width: 100%; border-collapse: collapse; }
+    .entry-head td { padding: 0; vertical-align: baseline; }
+    .entry-head td:last-child { width: 1%; padding-left: 12px; white-space: nowrap; text-align: right; }
+    .role { font-weight: 700; }
+    .company { font-style: italic; }
+    ul { margin: 1px 0 0 17px; padding: 0; }
+    li { margin: 0 0 1px; padding-left: 1px; }
+    .project { margin-bottom: 2px; }
+    .project strong { font-size: 9.6pt; }
+    .muted { color: #333; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Timothy Cisneros</h1>
+    <p class="headline">Full-Stack Software Developer | Cloud Applications &amp; Business Process Automation</p>
+    <p class="contact">
+      California &nbsp;|&nbsp; (661) 699-2062 &nbsp;|&nbsp;
+      <a href="mailto:tcisneros.cis@gmail.com">tcisneros.cis@gmail.com</a> &nbsp;|&nbsp;
+      <a href="https://timcis.com">timcis.com</a> &nbsp;|&nbsp;
+      <a href="https://github.com/timcisneros">github.com/timcisneros</a> &nbsp;|&nbsp;
+      <a href="https://www.linkedin.com/in/timcisneros/">linkedin.com/in/timcisneros</a>
+    </p>
+  </header>
+
+  <section>
+    <h2>Summary</h2>
+    <p>Full-stack software developer with professional experience delivering AWS-backed applications, enterprise document workflows, internal developer tools, and client business applications. Builds across interfaces, APIs, data models, testing, deployment, and maintenance using TypeScript, React, Next.js, Vue.js, Node.js, AWS, and SQL. Promoted twice at Conduent before moving into enterprise solutions engineering and end-to-end software delivery.</p>
+  </section>
+
+  <section class="skills">
+    <h2>Technical Skills</h2>
+    <p><strong>Core:</strong> TypeScript, React, Next.js, Vue.js Composition API, Node.js, Express, REST APIs, AWS, PostgreSQL, SQLite, SQL Server</p>
+    <p><strong>Professional delivery:</strong> JavaScript, MongoDB, Lambda, API Gateway, S3, Cognito, DynamoDB, Step Functions, Amplify, CloudFormation, GitHub Actions, DocuSign CLM, Laserfiche</p>
+    <p><strong>Project experience:</strong> Tailwind CSS, Pinia, Vue Router, Fastify, Redis, BullMQ, Docker, Nginx, Terraform, Playwright, Python, OpenAI API prototyping, eval and benchmark implementation</p>
+  </section>
+
+  <section>
+    <h2>Professional Experience</h2>
+    <div class="entry">
+      <table class="entry-head"><tr><td><span class="role">Digital Media Producer</span> — <span class="company">TimCis Media</span></td><td>Mar 2020–Present</td></tr></table>
+      <ul>
+        <li>Within a role spanning client software development and digital production, build and maintain internal applications with React, MongoDB/Express, and AWS serverless workflows using API Gateway, Step Functions, Lambda, and DynamoDB.</li>
+        <li>Own implementation across interfaces, APIs, data models, deployment, and maintenance, translating operational workflows into tools used on the job.</li>
+        <li>Convert CAD pipeline schematics into 2D isometric drawings for field use; built a related React field-logging tool for reusable tables and stringing reports.</li>
+      </ul>
+    </div>
+    <div class="entry">
+      <table class="entry-head"><tr><td><span class="role">Solutions Engineer</span> — <span class="company">Bitwise Industries / Stria</span></td><td>Mar 2021–May 2023</td></tr></table>
+      <ul>
+        <li>Built and shipped Next.js applications through AWS Amplify and CloudFormation, backed by Cognito, S3, Lambda, API Gateway, and DynamoDB.</li>
+        <li>Created DSDebug, an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and reduced variable tracing from an afternoon to minutes.</li>
+        <li>Streamlined HR onboarding with Laserfiche processes integrated with DocuSign eSignature; built real-time onboarding dashboards with Zoho Analytics and SQL Server.</li>
+        <li>Developed an interactive organization chart with React Flow, S3, Cognito, and GitHub Actions deployment.</li>
+      </ul>
+    </div>
+    <div class="entry">
+      <table class="entry-head"><tr><td><span class="role">T1 Advisor → Workforce Analyst → Quality Assurance</span> — <span class="company">Conduent</span></td><td>Jul 2016–Feb 2020</td></tr></table>
+      <ul>
+        <li>Promoted twice in four years, progressing from mobile-device support to workforce analytics and quality assurance.</li>
+        <li>Wrote VBA, JavaScript, and AppleScript automations to process adherence metrics and send real-time workforce updates.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Selected Engineering Projects</h2>
+    <p class="project"><strong>Self-Hosted YouTube Frontend</strong> — TypeScript/Express application covering feed ingestion, DASH media proxying, storage, Redis/BullMQ workers, Docker deployment, and Playwright resilience testing. Every dependency beyond Node is optional and swappable.</p>
+    <p class="project"><strong>Ticket System</strong> — Fastify reference implementation for auditable agent work with durable ticket and run lifecycles, scoped authority, evidence ledger, triage, replay, headless CLI operations, eval harnesses, and verification gates.</p>
+    <p class="project"><strong>Waydaw</strong> — Linux/Wine compatibility harness with explicit launchers, recovery tooling, investigation documentation, and 59 focused non-mutating diagnostics for a shared Ableton Live environment.</p>
+  </section>
+
+  <section>
+    <h2>Credentials &amp; Platform Training</h2>
+    <p>AWS Cloud Practitioner &nbsp;|&nbsp; DocuSign CLM Implementation &nbsp;|&nbsp; Laserfiche Gold</p>
+  </section>
+</body>
+</html>

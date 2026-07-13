@@ -33,18 +33,21 @@ export interface CaseStudy {
     code: string;
     demo?: string;
     extraLinks?: CaseStudyLink[];
+    employerValue: string;
+    overview: { label: string; value: string }[];
     intro: string[];
     steps: CaseStudyStep[];
     build: string[];
     deepDive?: CaseStudyDeepDive;
 }
 
-export const caseStudies: CaseStudy[] = [
+const CASE_STUDIES: CaseStudy[] = [
     {
         slug: 'dsdebug',
         name: 'DSDebug',
         tagline: 'Build and debug DocuSign CLM workflows visually',
         tags: ['React', 'Next.js', 'React Flow', 'Chakra UI', 'DocuSign CLM'],
+        employerValue: 'Demonstrates enterprise domain learning, developer-tool design, and a measurable reduction in debugging time for operational workflows.',
         demo: 'https://dsdebug-prod.vercel.app/',
         code: 'https://github.com/timcisneros/dsdebug-2023',
         extraLinks: [
@@ -57,10 +60,18 @@ export const caseStudies: CaseStudy[] = [
                 href: 'https://github.com/timcisneros/dsdebug',
             },
         ],
+        overview: [
+            { label: 'Role', value: 'Solutions Engineer and product developer' },
+            { label: 'Context', value: 'Enterprise DocuSign CLM workflow debugging' },
+            { label: 'Implemented', value: 'Variable tracing, graph rendering, visual authoring, and console tooling' },
+            { label: 'Constraint', value: 'Make dense exported workflow JSON usable without a manual trace' },
+            { label: 'Outcome', value: 'Reduced an afternoon of JSON inspection to minutes of visual tracing' },
+            { label: 'Status', value: '2022 tracer and 2023 workbench both deployed' },
+        ],
         intro: [
             'At Bitwise Industries my team maintained large-scale DocuSign CLM automations for enterprise clients. When a workflow misbehaved, the only way to inspect it was to export the definition and read the raw JSON. Hundreds of steps, variables, and routing rules were flattened into a format meant for machines.',
             'DSDebug turned an afternoon of reading raw JSON exports into minutes of tracing on an interactive graph. The 2022 original was built for exactly that one job: tracing variables through a workflow. The 2023 rebuild kept the tracer and shifted the focus to editing, adding drag-and-drop authoring, a template library, and a console that turned a debugging aid into a full workflow workbench. Both versions are linked above.',
-            'The workflows behind this tool are classic document automation: a document arrives, gets classified, has data extracted, and is routed through review and signature. At Bitwise I built those pipelines end-to-end, including HR onboarding that ran through Laserfiche processes wired into DocuSign eSignature. DSDebug exists because pipelines like that fail in production and someone has to trace why. In 2026 the same pattern is being rebuilt around AI agents, and it carries the same operational question DSDebug answered for CLM: when the automation misbehaves, can you see exactly what it did? My [Ticket System](/projects/ticket-system) takes that question on directly for agent-run work.',
+            'The workflows behind this tool are classic document automation: a document arrives, gets classified, has data extracted, and is routed through review and signature. At Bitwise I built those pipelines end-to-end, including HR onboarding that ran through Laserfiche processes wired into DocuSign eSignature. DSDebug exists because pipelines like that fail in production and someone has to trace why. The same operational question applies whenever automated workflows or agents act on business processes: when the automation misbehaves, can you see exactly what it did? My [Ticket System](/projects/ticket-system) takes that question on directly for agent-run work.',
         ],
         steps: [
             {
@@ -110,9 +121,18 @@ export const caseStudies: CaseStudy[] = [
         slug: 'action-plan',
         name: 'Action Plan Generator',
         tagline: 'Turn any YouTube video into a 7-day action plan',
-        tags: ['TypeScript', 'Next.js', 'AI', 'Product Design'],
+        tags: ['TypeScript', 'Astro', 'Vue 3', 'OpenAI API'],
+        employerValue: 'Demonstrates product judgment by constraining an open-ended model task into a focused input, predictable structure, and usable next action.',
         demo: 'https://seo-project-umber.vercel.app/',
         code: 'https://github.com/timcisneros/seo-project',
+        overview: [
+            { label: 'Role', value: 'Independent full-stack developer and product designer' },
+            { label: 'Context', value: 'Video summaries explain content but rarely turn it into action' },
+            { label: 'Implemented', value: 'A constrained LLM pipeline, structured plan UI, copy flow, and share links' },
+            { label: 'Constraint', value: 'Keep the experience stateless, immediate, and specific rather than freeform' },
+            { label: 'Outcome', value: 'A working tool that converts one video link into a time-boxed seven-day plan' },
+            { label: 'Status', value: 'Live product prototype with public source' },
+        ],
         intro: [
             'Watching self-improvement content rarely changes behavior, but acting on it does. Every AI tool in this space produces summaries, which just retell the video. This app produces something different: a concrete, dated, day-by-day plan you can start today.',
             'The walkthrough below is a real run. I pasted Tim Urban’s TED talk ["Inside the Mind of a Master Procrastinator"](https://www.ted.com/talks/tim_urban_inside_the_mind_of_a_master_procrastinator) and captured what came back.',
@@ -147,7 +167,7 @@ export const caseStudies: CaseStudy[] = [
             },
         ],
         build: [
-            'TypeScript and Next.js, with an LLM pipeline that transcribes the video’s content and reshapes it into the fixed plan structure: core idea, insights, actions, and a 7-day schedule.',
+            'TypeScript, Astro server routes, and a Vue 3 interface, with an OpenAI Responses API pipeline that extracts the video’s content and reshapes it into the fixed plan structure: core idea, insights, actions, and a 7-day schedule.',
             'Stateless by design: no accounts, no stored history. A generated plan lives in the share link.',
             'Prompt-shaped output, not freeform: the model is constrained to produce actions with times and quantities, which is what separates a plan from a summary.',
         ],
@@ -157,7 +177,16 @@ export const caseStudies: CaseStudy[] = [
         name: 'Self-Hosted YouTube Frontend',
         tagline: 'Watch your subscriptions privately without touching Google',
         tags: ['TypeScript', 'Express', 'Redis / BullMQ', 'Shaka Player', 'Playwright', 'Docker'],
+        employerValue: 'Demonstrates full-stack systems ownership across ingestion, media proxying, storage, queues, graceful degradation, testing, and deployment options.',
         code: 'https://github.com/timcisneros/my-youtube',
+        overview: [
+            { label: 'Role', value: 'Independent full-stack and systems developer' },
+            { label: 'Context', value: 'Private, chronological subscription viewing without browser calls to Google' },
+            { label: 'Implemented', value: 'Feed ingestion, stream extraction, media proxying, playback, storage, queues, and deployment tooling' },
+            { label: 'Constraint', value: 'Keep every dependency beyond Node optional and swappable' },
+            { label: 'Outcome', value: 'One tested codebase that runs locally or with PostgreSQL, S3, Redis, and worker replicas' },
+            { label: 'Status', value: 'Working self-hosted application with resilience and deployment suites' },
+        ],
         intro: [
             'YouTube knows a lot about you. This is a self-hosted frontend where the server proxies every stream, thumbnail, and piece of metadata. The browser never makes a single request to Google. No account, no tracking, no algorithm. Just a chronological feed of channels I chose.',
             'Every screenshot below is a live capture from a running instance with imported subscriptions, real feed, and real playback.',
@@ -248,7 +277,16 @@ export const caseStudies: CaseStudy[] = [
         name: 'Ticket System',
         tagline: 'Auditable, controlled execution for AI agents',
         tags: ['Node.js', 'Fastify', 'AI Agents', 'Systems Design'],
+        employerValue: 'Demonstrates reliability-oriented implementation through explicit authority, inspectable state, failure recovery, independent verification, and regression-tested invariants.',
         code: 'https://github.com/timcisneros/ticket-system',
+        overview: [
+            { label: 'Role', value: 'Independent full-stack and systems developer' },
+            { label: 'Context', value: 'Agent-run work needs explicit authority, evidence, verification, and operator review' },
+            { label: 'Implemented', value: 'Ticket and run lifecycles, evidence ledger, triage, replay, CLI operations, and eval harnesses' },
+            { label: 'Constraint', value: 'No off-ledger effects and no completion without independent verification' },
+            { label: 'Outcome', value: 'A seeded reference system with inspectable failure paths and regression-tested invariants' },
+            { label: 'Status', value: 'Working reference implementation with public source and operational documentation' },
+        ],
         intro: [
             'Every unit of work is a durable ticket, every execution runs under explicit authority, every external effect flows through a target provider.',
             'The screenshots below are from the seeded demo environment. Six tickets are engineered to show the full lifecycle, including the failure paths.',
@@ -372,7 +410,16 @@ export const caseStudies: CaseStudy[] = [
         name: 'Waydaw',
         tagline: 'Ableton Live 12 on Linux',
         tags: ['Linux', 'Bash', 'Wine', 'KDE Wayland', 'Audio Production'],
+        employerValue: 'Demonstrates disciplined debugging under compatibility constraints, with non-mutating diagnostics and documentation that turns investigation into reusable operational knowledge.',
         code: 'https://github.com/timcisneros/waydaw',
+        overview: [
+            { label: 'Role', value: 'Independent developer and investigator' },
+            { label: 'Context', value: 'Run Ableton Live, Max for Live, MIDI tools, and Windows plugins on Linux' },
+            { label: 'Implemented', value: 'Launchers, recovery tools, logs, 59 focused diagnostics, and investigation documentation' },
+            { label: 'Constraint', value: 'Diagnostics must be explicit, non-mutating, and safe for a shared Wine prefix' },
+            { label: 'Outcome', value: 'A reproducible working environment with evidence behind each compatibility decision' },
+            { label: 'Status', value: 'Active personal tooling used on KDE Plasma Wayland' },
+        ],
         intro: [
             'I produce music in Ableton Live, and I run Linux. Waydaw is a harness that makes the two work together: one shared Wine prefix for Ableton Live 12, Max for Live, Bome MIDI Translator, and Windows VST plugins, with explicit launchers, logs, and recovery commands on KDE Plasma Wayland.',
             'It’s bash-first and minimal: installs nothing, touches nothing it doesn’t own, and everything it assumes is something you can verify.',
@@ -395,6 +442,19 @@ export const caseStudies: CaseStudy[] = [
         ],
     },
 ];
+
+const CASE_STUDY_ORDER = [
+    'dsdebug',
+    'my-youtube',
+    'ticket-system',
+    'action-plan',
+    'waydaw',
+];
+
+export const caseStudies = [...CASE_STUDIES].sort(
+    (left, right) =>
+        CASE_STUDY_ORDER.indexOf(left.slug) - CASE_STUDY_ORDER.indexOf(right.slug)
+);
 
 export const getCaseStudy = (slug: string): CaseStudy | undefined =>
     caseStudies.find((study) => study.slug === slug);

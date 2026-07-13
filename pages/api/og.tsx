@@ -6,7 +6,7 @@ export default function handler(req: Request) {
     const { searchParams } = new URL(req.url);
     const title = (searchParams.get('title') || 'Tim Cisneros').slice(0, 80);
     const subtitle = (
-        searchParams.get('subtitle') || 'Full-Stack JavaScript Developer'
+        searchParams.get('subtitle') || 'Full-Stack Software Developer'
     ).slice(0, 120);
 
     return new ImageResponse(
@@ -20,8 +20,8 @@ export default function handler(req: Request) {
                     justifyContent: 'space-between',
                     padding: '72px 80px',
                     background:
-                        'linear-gradient(135deg, #0a0e13 0%, #10161e 60%, #0e2b26 100%)',
-                    color: '#e8eef4',
+                        'linear-gradient(135deg, #131314 0%, #1c1c1e 60%, #232327 100%)',
+                    color: '#ececee',
                     fontFamily: 'sans-serif',
                 }}
             >
@@ -30,7 +30,7 @@ export default function handler(req: Request) {
                         display: 'flex',
                         alignItems: 'center',
                         fontSize: 28,
-                        color: '#35d0ba',
+                        color: '#ffe04f',
                     }}
                 >
                     timcis.com
@@ -49,7 +49,7 @@ export default function handler(req: Request) {
                     <div
                         style={{
                             fontSize: 32,
-                            color: '#93a3b3',
+                            color: '#a3a4a8',
                             marginTop: 20,
                         }}
                     >
@@ -62,7 +62,7 @@ export default function handler(req: Request) {
                         alignItems: 'center',
                         gap: 16,
                         fontSize: 24,
-                        color: '#66788a',
+                        color: '#86878c',
                     }}
                 >
                     <div
@@ -70,7 +70,7 @@ export default function handler(req: Request) {
                             width: 14,
                             height: 14,
                             borderRadius: 999,
-                            background: '#35d0ba',
+                            background: '#ffe04f',
                         }}
                     />
                     React &amp; Next.js · AWS · Business Process Automation
