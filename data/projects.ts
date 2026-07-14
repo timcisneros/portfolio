@@ -70,6 +70,22 @@ export const featuredProjects: ShowcaseProject[] = [
     caseStudy: "/projects/dsdebug",
   },
   {
+    id: "entity-visualization",
+    name: "Entity Visualization",
+    tagline: "Trace complex ownership structures visually",
+    description: [
+      "I built this professional organization-chart application as a Solutions Engineer at Bitwise Industries / Stria. It turns dense ownership records into an automatically laid-out React Flow graph where users can follow parent and subsidiary relationships, inspect ownership and distribution summaries, switch charts, and open connected records.",
+      "The public edition deliberately separates portfolio evidence from the former client environment: it retains the graph, Dagre layout, Cognito boundary, navigation, summaries, and print workflow while replacing production identifiers, document links, and entity names. Its anonymized dataset exercises 142 relationships across 10 charts and 73 entities.",
+    ],
+    tags: ["React Flow", "Dagre", "AWS Cognito", "Data Visualization"],
+    image: "/project-imgs/entity-visualization.png",
+    imageWidth: 1280,
+    imageHeight: 780,
+    imageAlt:
+      "Entity Visualization showing an automatically laid-out organization chart with relationship controls",
+    code: "https://github.com/timcisneros/entity-visualization",
+  },
+  {
     id: "action-plan",
     name: "Action Plan Generator",
     tagline: "A YouTube link in, a 7-day plan out",
@@ -147,9 +163,10 @@ export const systemsProjects: ShowcaseProject[] = [
 // infrastructure, systems, product, and specialist debugging depth.
 export const showcaseProjects: ShowcaseProject[] = [
   featuredProjects[0],
+  featuredProjects[1],
   systemsProjects[0],
   systemsProjects[1],
-  featuredProjects[1],
+  featuredProjects[2],
   systemsProjects[2],
 ];
 
@@ -157,14 +174,6 @@ export const leadProjects = showcaseProjects.slice(0, 3);
 export const supportingProjects = showcaseProjects.slice(3);
 
 export const moreProjects: GridProject[] = [
-  {
-    id: "entity-visualization",
-    name: "Entity Visualization",
-    description:
-      "An anonymized public version of a professional organization-chart application for tracing ownership, parent and subsidiary relationships, distributions, and connected records across complex entity structures.",
-    tags: ["React Flow", "AWS Cognito", "Data Visualization"],
-    code: "https://github.com/timcisneros/entity-visualization",
-  },
   {
     id: "stringing-report",
     name: "Stringing Report App",

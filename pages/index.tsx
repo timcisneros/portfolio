@@ -172,8 +172,9 @@ function Home() {
           <p className="section-label">More project evidence</p>
           <h2 className="section-title">Product and specialist depth</h2>
           <p className="section-intro">
-            Two additional case studies show constrained product implementation
-            and evidence-driven debugging outside the primary application stack.
+            Additional case studies show governed agent implementation,
+            constrained product work, and evidence-driven debugging beyond the
+            primary professional application stack.
           </p>
           {supportingProjects.map((project) => (
             <FeaturedProject key={project.id} project={project} />

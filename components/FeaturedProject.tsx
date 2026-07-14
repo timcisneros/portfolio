@@ -27,13 +27,23 @@ const FeaturedProject = ({ project }: { project: ShowcaseProject }) => {
                 >
                     {media}
                 </Link>
-            ) : (
+            ) : project.demo ? (
                 <a
                     href={project.demo}
                     target="_blank"
                     rel="noreferrer"
                     className="featured-media"
                     aria-label={`${project.name} live demo`}
+                >
+                    {media}
+                </a>
+            ) : (
+                <a
+                    href={project.code}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="featured-media"
+                    aria-label={`View ${project.name} source`}
                 >
                     {media}
                 </a>

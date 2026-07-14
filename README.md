@@ -17,9 +17,17 @@ business-process automation. [See it live](https://timcisneros.vercel.app/).
 
 The featured work connects implementation details to business and operational
 outcomes: DSDebug reduced enterprise workflow tracing from an afternoon to
-minutes; the Self-Hosted YouTube Frontend exercises portable storage, queues,
-media proxying, and resilience; and Ticket System implements auditable agent
+minutes; Entity Visualization makes complex ownership structures navigable;
+the Self-Hosted YouTube Frontend exercises portable storage, queues, media
+proxying, and resilience; and Ticket System implements auditable agent
 execution with explicit authority and verification gates.
+
+## Source-use terms
+
+This repository is public for portfolio review. No license is granted unless a
+specific file or dependency states otherwise. Project repositories document
+their own reuse terms; professional work may intentionally remain
+source-available for evaluation rather than open source.
 
 ## Architecture
 

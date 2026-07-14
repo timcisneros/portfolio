@@ -72,10 +72,11 @@ describe('project content integrity', () => {
     it('leads with professional and systems evidence before supporting work', () => {
         expect(leadProjects.map((project) => project.id)).toEqual([
             'dsdebug',
+            'entity-visualization',
             'my-youtube',
-            'ticket-system',
         ]);
         expect(supportingProjects.map((project) => project.id)).toEqual([
+            'ticket-system',
             'action-plan',
             'waydaw',
         ]);

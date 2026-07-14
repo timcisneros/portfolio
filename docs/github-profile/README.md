@@ -14,7 +14,8 @@ on the job.
 - **[Entity Visualization](https://github.com/timcisneros/entity-visualization)** —
   An anonymized public version of a professional React Flow organization chart
   for tracing ownership, parent and subsidiary relationships, distributions,
-  and connected records across complex entity structures.
+  and connected records across complex entity structures. The included dataset
+  exercises 142 relationships across 10 charts and 73 entities.
 - **[Self-Hosted YouTube](https://github.com/timcisneros/my-youtube)** — A
   private subscription frontend whose server proxies streams, thumbnails, and
   metadata so the browser never contacts Google. Its storage, queue, and worker
