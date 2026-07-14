@@ -4,7 +4,7 @@
 
 Portfolio and project case studies for Tim Cisneros, a full-stack software
 developer focused on cloud-backed applications, operational tooling, and
-business-process automation. [See it live](https://timcisneros.vercel.app/).
+business-process automation. [See it live](https://timcis.com/).
 
 ## What this repository demonstrates
 

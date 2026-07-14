@@ -118,6 +118,66 @@ const CASE_STUDIES: CaseStudy[] = [
         ],
     },
     {
+        slug: 'entity-visualization',
+        name: 'Entity Visualization',
+        tagline: 'Trace complex ownership structures visually',
+        tags: ['React', 'React Flow', 'Dagre', 'Amazon Cognito'],
+        employerValue: 'Demonstrates professional application delivery, graph-model transformation, automatic layout, authentication boundaries, and responsible publication of anonymized client-derived work.',
+        code: 'https://github.com/timcisneros/entity-visualization',
+        overview: [
+            { label: 'Role', value: 'Solutions Engineer and application developer' },
+            { label: 'Context', value: 'Professional organization-chart and ownership analysis at Bitwise Industries / Stria' },
+            { label: 'Implemented', value: 'Graph construction, automatic layout, relationship tracing, summaries, authentication, navigation, and print output' },
+            { label: 'Constraint', value: 'Publish credible implementation evidence without exposing client entities, records, links, credentials, or infrastructure' },
+            { label: 'Public scale', value: '142 anonymized relationships across 10 charts and 73 entities' },
+            { label: 'Status', value: 'Sanitized public edition with security, test, and production-build CI' },
+        ],
+        intro: [
+            'I built Entity Visualization as a Solutions Engineer at Bitwise Industries / Stria. The application turns flat ownership records into an interactive organization chart where users can move through separate structures, follow an entity through its parent relationships, inspect ownership and distribution summaries, navigate with a minimap, and print the resulting view.',
+            'The public edition is deliberately not a copy of the former environment. Production identifiers, entity names, document URLs, deployment configuration, and legacy history remain private. The graph construction, Dagre layout, Cognito integration boundary, selection behavior, summaries, and print workflow remain reviewable against generated demonstration data.',
+        ],
+        steps: [
+            {
+                title: 'From flat ownership records to a navigable graph',
+                body: 'For the selected chart, the application deduplicates parent entities into nodes, converts each ownership record into a labeled edge, identifies top-level entities, and passes the result through Dagre for a top-to-bottom layout. Selecting a node recursively gathers its incoming relationships so the same workspace becomes both the overview and the trace surface.',
+                image: '/project-imgs/entity-visualization.png',
+                imageWidth: 1280,
+                imageHeight: 780,
+                imageAlt: 'Entity Visualization displaying an automatically laid-out ownership graph with navigation and relationship details',
+            },
+        ],
+        build: [
+            'React Flow renders the graph and supplies pan, zoom, minimap, controls, selection, and connection traversal; Dagre calculates positions from the relationship topology.',
+            'Amazon Cognito is isolated behind environment-provided user-pool and client identifiers. Without that configuration, the public edition opens directly in demo mode against anonymized local data.',
+            'Repository tests reject professional document domains and known environment identifiers, while GitHub Actions runs dependency auditing, tests, and a Vite production build on every change.',
+        ],
+        deepDive: {
+            label: 'Implementation evidence',
+            title: 'The public boundary is part of the engineering',
+            body: [
+                'Publishing professional work safely required more than renaming a few visible nodes. The active data was anonymized, environment-specific exports were removed, connected-record URLs were blanked, Cognito identifiers moved to local configuration, and the obsolete production deployment workflow was excluded.',
+                'The public repository begins with a clean sanitized history, while the former professional history remains private. That boundary makes the implementation inspectable without implying that the demonstration dataset, infrastructure, or credentials belong in a public portfolio.',
+            ],
+            artifacts: [
+                {
+                    label: 'src/components/Chart/index.js',
+                    href: 'https://github.com/timcisneros/entity-visualization/blob/main/src/components/Chart/index.js',
+                    note: 'Builds nodes and ownership edges, applies Dagre layout, and recursively traces incoming relationships.',
+                },
+                {
+                    label: 'src/UserPool.js',
+                    href: 'https://github.com/timcisneros/entity-visualization/blob/main/src/UserPool.js',
+                    note: 'Keeps Cognito configuration outside source and exposes the optional authentication boundary.',
+                },
+                {
+                    label: 'tests/repository.test.mjs',
+                    href: 'https://github.com/timcisneros/entity-visualization/blob/main/tests/repository.test.mjs',
+                    note: 'Guards the public edition against professional identifiers and unsafe configuration guidance.',
+                },
+            ],
+        },
+    },
+    {
         slug: 'action-plan',
         name: 'Action Plan Generator',
         tagline: 'Turn any YouTube video into a 7-day action plan',
@@ -445,6 +505,7 @@ const CASE_STUDIES: CaseStudy[] = [
 
 const CASE_STUDY_ORDER = [
     'dsdebug',
+    'entity-visualization',
     'my-youtube',
     'ticket-system',
     'action-plan',

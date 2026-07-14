@@ -84,6 +84,7 @@ export const featuredProjects: ShowcaseProject[] = [
     imageAlt:
       "Entity Visualization showing an automatically laid-out organization chart with relationship controls",
     code: "https://github.com/timcisneros/entity-visualization",
+    caseStudy: "/projects/entity-visualization",
   },
   {
     id: "action-plan",
@@ -296,7 +297,7 @@ export const experience: Job[] = [
   },
   {
     id: "timcis-media",
-    role: "Digital Media Producer",
+    role: "Digital Media Producer — Client Software Development & Digital Production",
     company: "TimCis Media",
     period: "Mar 2020 – Present",
     location: "California",
