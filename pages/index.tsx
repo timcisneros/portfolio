@@ -220,7 +220,12 @@ function Home() {
           </div>
 
           <div className="credentials">
-            <p className="section-label">Credentials &amp; platform training</p>
+            <p className="section-label">Credentials &amp; professional learning</p>
+            <p className="section-intro">
+              My software-development education is self-directed: structured
+              coursework, technical tutorials, independent builds, and
+              professional delivery.
+            </p>
             <div className="credentials-grid">
               {credentials.map((credential) => (
                 <div key={credential.name} className="credential-card">
@@ -325,14 +330,16 @@ function Home() {
               </p>
               <p>
                 These days I build business applications for clients through
-                TimCis Media, where my digital production role includes React,
-                Express, and AWS serverless software delivery.
+                TimCis Media, my independent freelance and part-time business,
+                where my digital production role includes React, Express, and
+                AWS serverless software delivery.
               </p>
               <p>
-                I&apos;m based in California. My platform training includes AWS
-                Cloud Practitioner and DocuSign CLM Implementation training.
-                I&apos;m looking for full-stack engineering, internal-tools, or
-                business-process automation roles.
+                I&apos;m a self-taught developer whose education combines
+                structured Udemy coursework, technical tutorials, sustained
+                hands-on practice, and professional experience. I&apos;m based in
+                California and looking for full-stack engineering,
+                internal-tools, or business-process automation roles.
               </p>
             </div>
           </div>

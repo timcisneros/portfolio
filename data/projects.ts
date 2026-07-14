@@ -292,16 +292,17 @@ export const experience: Job[] = [
       "Owned AWS web-application delivery across Next.js interfaces, authentication, APIs, storage, infrastructure, and CI/CD using Cognito, S3, Lambda, API Gateway, DynamoDB, Amplify, and CloudFormation.",
       "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and reduced variable tracing from an afternoon of JSON inspection to minutes.",
       "Built [Entity Visualization](https://github.com/timcisneros/entity-visualization), an interactive organization chart using React Flow, S3, and Cognito to trace ownership, related entities, distributions, and connected records; the public source uses anonymized data.",
+      "Collaborated professionally on implementation of the Taleo project at Bitwise.",
       "Implemented an end-to-end HR onboarding workflow across Laserfiche and DocuSign eSignature, with operational visibility through Zoho Analytics and SQL Server dashboards.",
     ],
   },
   {
     id: "timcis-media",
-    role: "Digital Media Producer — Client Software Development & Digital Production",
+    role: "Digital Media Producer",
     company: "TimCis Media",
     period: "Mar 2020 – Present",
     location: "California",
-    context: "Official title spanning client software development and digital production",
+    context: "Independent freelance and part-time business spanning client software development and digital production",
     bullets: [
       "Translate client operating procedures into maintained internal applications using React, MongoDB / Express, and AWS serverless workflows across API Gateway, Step Functions, Lambda, and DynamoDB.",
       "Own delivery from workflow discovery through interfaces, APIs, data models, release, and ongoing changes, keeping implementation decisions tied to the work users perform on the job.",
@@ -323,18 +324,15 @@ export const experience: Job[] = [
 
 export const credentials: Credential[] = [
   {
-    name: "AWS Cloud Practitioner training",
-    detail:
-      "Core AWS services and use cases, billing and pricing models, and security concepts.",
+    name: "AWS Certified Cloud Practitioner",
+    detail: "Amazon Web Services · Earned May 2021 · Expired May 2024",
   },
   {
-    name: "Laserfiche Gold training",
-    detail:
-      "Capture, system administration, and integration capabilities across Cloud and On-Prem.",
+    name: "Laserfiche Business Process Design Certification",
+    detail: "Laserfiche · Issued November 2021",
   },
   {
-    name: "DocuSign CLM Implementation training",
-    detail:
-      "System administration, Salesforce integration, and workflow conventions.",
+    name: "Certified DocuSign CLM Implementation Consultant",
+    detail: "DocuSign · Earned October 2022 · Expired October 2024",
   },
 ];
