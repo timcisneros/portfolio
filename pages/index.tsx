@@ -360,12 +360,6 @@ function Home() {
           </p>
           <DeferredContactForm />
           <div className="contact-links">
-            <a href="mailto:tcisneros.cis@gmail.com" className="contact-link">
-              <MailIcon /> Email
-            </a>
-            <Link href="/resume" className="contact-link">
-              <DownloadIcon /> Resume
-            </Link>
             <a
               href="https://github.com/timcisneros"
               target="_blank"

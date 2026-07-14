@@ -28,6 +28,15 @@ for (const theme of ['light', 'dark'] as const) {
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expectAccessible(page);
     });
+
+    test(`now page passes WCAG A/AA checks in ${theme} mode`, async ({ page }) => {
+        await page.addInitScript((selectedTheme) => {
+            localStorage.setItem('theme', selectedTheme);
+        }, theme);
+        await page.goto('/now');
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expectAccessible(page);
+    });
 }
 
 for (const study of caseStudies) {

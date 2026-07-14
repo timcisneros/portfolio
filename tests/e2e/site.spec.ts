@@ -25,12 +25,47 @@ test('homepage renders every section', async ({ page }) => {
     await expect(page.locator('.proof-grid')).toContainText('Two promotions');
     await expect(page.locator('.proof-grid')).toContainText('Enterprise delivery');
     await expect(page.locator('.skill-level')).toHaveCount(4);
+    const quietContactLinks = page.locator('#contact .contact-links');
+    await expect(quietContactLinks.getByRole('link')).toHaveCount(2);
+    await expect(
+        quietContactLinks.getByRole('link', { name: 'Email' })
+    ).toHaveCount(0);
+    await expect(
+        quietContactLinks.getByRole('link', { name: 'Resume' })
+    ).toHaveCount(0);
+    await expect(
+        page.locator('.footer').getByRole('link', { name: 'Now' })
+    ).toHaveCount(0);
     const sectionOrder = await page.locator('main').evaluate((main) =>
         ['projects', 'experience', 'supporting-work', 'skills'].map((id) =>
             Array.from(main.children).findIndex((child) => child.id === id)
         )
     );
     expect(sectionOrder).toEqual([...sectionOrder].sort((a, b) => a - b));
+});
+
+test('now page is a current, reciprocal Open Sauce note', async ({ page }) => {
+    await page.goto('/now');
+    await expect(
+        page.getByRole('heading', { name: "What I'm working on" })
+    ).toBeVisible();
+    await expect(page.getByText(/Open Sauce July 18–19/)).toBeVisible();
+    await expect(page.getByText("I'm not exhibiting")).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Making agent runs/ }))
+        .toHaveAttribute('href', '/projects/ticket-system');
+    await expect(page.getByRole('link', { name: /Building a private/ }))
+        .toHaveAttribute('href', '/projects/my-youtube');
+    await expect(page.getByRole('img', { name: 'Tim Cisneros' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Email me' }))
+        .toHaveAttribute(
+            'href',
+            /subject=Open%20Sauce/
+        );
+    const followUp = page.locator('section[aria-labelledby="if-we-met"]');
+    await expect(followUp.getByRole('link', { name: 'GitHub' }))
+        .toHaveAttribute('href', 'https://github.com/timcisneros');
+    await expect(followUp.getByRole('link', { name: 'LinkedIn' }))
+        .toHaveAttribute('href', 'https://www.linkedin.com/in/timcisneros/');
 });
 
 test('headline formatting does not shift following words', async ({ page }) => {

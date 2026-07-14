@@ -3137,6 +3137,7 @@ a {
 .contact-form .btn {
   width: 100%;
   justify-content: center;
+  margin-bottom: 16px;
 }
 
 .contact-form .btn:disabled {
