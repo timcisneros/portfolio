@@ -295,11 +295,12 @@ export const experience: Job[] = [
       "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and, in day-to-day team use, reduced afternoon-scale variable inspection to minutes.",
       "Built [Entity Visualization](https://github.com/timcisneros/entity-visualization), an interactive organization chart using React Flow, S3, and Cognito to trace ownership, related entities, distributions, and connected records; the public source uses anonymized data.",
       "Implemented an end-to-end HR onboarding workflow across Laserfiche and DocuSign eSignature, with operational visibility through Zoho Analytics and SQL Server dashboards.",
+      "Collaborated on the professional TCS/Stria Taleo project as part of the Bitwise delivery team; the client work is not represented as a public-source project.",
     ],
   },
   {
     id: "timcis-media",
-    role: "Digital Media Producer",
+    role: "Digital Media Producer / Independent Software Developer",
     company: "TimCis Media",
     period: "Mar 2020 – Present",
     location: "California",
