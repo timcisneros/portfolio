@@ -611,10 +611,38 @@ test('long keycap legends stay inside their SVG and narrow viewport', async ({ p
 });
 
 test('featured project links to its walkthrough', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 });
     await page.goto('/');
+    const featuredLinks = page
+        .locator('.featured')
+        .first()
+        .locator('.project-links');
+    await expect(featuredLinks).toHaveCSS('flex-wrap', 'wrap');
+    const featuredLinkStyles = await featuredLinks
+        .locator('.project-link')
+        .evaluateAll((links) =>
+            links.map((link) => getComputedStyle(link).whiteSpace)
+        );
+    expect(new Set(featuredLinkStyles)).toEqual(new Set(['nowrap']));
     await page.getByRole('link', { name: /read the walkthrough/i }).first().click();
     await expect(page).toHaveURL(/\/projects\/dsdebug/);
     await expect(page.locator('h1')).toContainText('DSDebug');
+    await expect(page.locator('.cs-step').first()).toHaveCSS(
+        'border-top-width',
+        '0px'
+    );
+    await expect(page.locator('.cs-step').nth(1)).toHaveCSS(
+        'border-top-width',
+        '1px'
+    );
+    const caseStudyLinks = page.locator('.cs-hero .project-links');
+    await expect(caseStudyLinks).toHaveCSS('flex-wrap', 'wrap');
+    const caseStudyLinkStyles = await caseStudyLinks
+        .locator('.project-link')
+        .evaluateAll((links) =>
+            links.map((link) => getComputedStyle(link).whiteSpace)
+        );
+    expect(new Set(caseStudyLinkStyles)).toEqual(new Set(['nowrap']));
 });
 
 for (const study of caseStudies) {

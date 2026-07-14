@@ -138,11 +138,13 @@
 
 .exchangeLinks a {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 7px;
   color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .exchangeLinks a:hover {
