@@ -158,6 +158,14 @@ export const supportingProjects = showcaseProjects.slice(3);
 
 export const moreProjects: GridProject[] = [
   {
+    id: "entity-visualization",
+    name: "Entity Visualization",
+    description:
+      "An anonymized public version of a professional organization-chart application for tracing ownership, parent and subsidiary relationships, distributions, and connected records across complex entity structures.",
+    tags: ["React Flow", "AWS Cognito", "Data Visualization"],
+    code: "https://github.com/timcisneros/entity-visualization",
+  },
+  {
     id: "stringing-report",
     name: "Stringing Report App",
     description:
@@ -273,7 +281,7 @@ export const experience: Job[] = [
     bullets: [
       "Owned AWS web-application delivery across Next.js interfaces, authentication, APIs, storage, infrastructure, and CI/CD using Cognito, S3, Lambda, API Gateway, DynamoDB, Amplify, and CloudFormation.",
       "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and reduced variable tracing from an afternoon of JSON inspection to minutes.",
-      "Delivered an interactive organization chart with React Flow, S3, Cognito, and GitHub Actions, connecting the user interface to authenticated cloud storage and repeatable delivery.",
+      "Built [Entity Visualization](https://github.com/timcisneros/entity-visualization), an interactive organization chart using React Flow, S3, and Cognito to trace ownership, related entities, distributions, and connected records; the public source uses anonymized data.",
       "Implemented an end-to-end HR onboarding workflow across Laserfiche and DocuSign eSignature, with operational visibility through Zoho Analytics and SQL Server dashboards.",
     ],
   },
