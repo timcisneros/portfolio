@@ -1456,7 +1456,6 @@ a {
     transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 110ms ease,
     filter 160ms ease;
-  will-change: transform;
 }
 
 .btn-cap > .keycap-content-svg {
@@ -2125,7 +2124,6 @@ a {
   transform: var(--keycap-label-transform, matrix(1, 0, 0, 1, 0, -1));
   transform-origin: center;
   transition: none;
-  will-change: transform;
 }
 
 @media (hover: hover) {

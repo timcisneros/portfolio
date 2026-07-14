@@ -1,10 +1,6 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-const TypewriterHeadline = dynamic(() => import("./TypewriterHeadline"), {
-  ssr: false,
-});
-
 function StaticHeadline() {
   return (
     <span className="tw" aria-hidden="true">
@@ -20,6 +16,11 @@ function StaticHeadline() {
     </span>
   );
 }
+
+const TypewriterHeadline = dynamic(() => import("./TypewriterHeadline"), {
+  ssr: false,
+  loading: StaticHeadline,
+});
 
 /** Paint the complete headline immediately, then hydrate its editing runtime
  * after critical rendering work has settled. The two states share dimensions

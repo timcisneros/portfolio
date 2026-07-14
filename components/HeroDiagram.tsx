@@ -434,7 +434,6 @@ const ActiveCard = memo(({
     <a
       href={`#${card.target}`}
       className="hd-card-project-link"
-      aria-label={`View ${card.name} in the projects section`}
     >
       <header className="hd-card-header">
         <h2>{card.name}</h2>

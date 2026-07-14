@@ -1,5 +1,35 @@
 import { expect, test } from "@playwright/test";
 
+test("mobile hero keeps its LCP text stationary as the headline activates", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.addInitScript(() => {
+    const metrics = { cls: 0 };
+    (window as Window & { __mobileHeroBudget?: typeof metrics }).__mobileHeroBudget = metrics;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as Array<PerformanceEntry & { hadRecentInput?: boolean; value?: number }>) {
+        if (!entry.hadRecentInput) metrics.cls += entry.value ?? 0;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+
+  await page.goto("/");
+  const subtitle = page.locator(".hero-sub");
+  await expect(subtitle).toBeVisible();
+  const initialTop = (await subtitle.boundingBox())!.y;
+  await page.waitForTimeout(2500);
+  const settledTop = (await subtitle.boundingBox())!.y;
+  const metrics = await page.evaluate(() =>
+    (window as Window & { __mobileHeroBudget?: { cls: number } }).__mobileHeroBudget,
+  );
+
+  expect(Math.abs(settledTop - initialTop)).toBeLessThanOrEqual(0.5);
+  expect(metrics).toBeDefined();
+  expect(metrics!.cls).toBeLessThanOrEqual(0.05);
+  await expect(page.locator(".hero-diagram.is-active .hd-card-project-link")).toHaveAccessibleName(
+    "DSDebug Dense workflow JSON becomes a graph you can trace and edit.",
+  );
+});
+
 test("homepage stays within runtime stability budgets", async ({ page }) => {
   await page.addInitScript(() => {
     const metrics = { cls: 0, longestTask: 0, longestTaskStart: 0 };
