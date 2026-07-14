@@ -30,9 +30,14 @@ export default function DeferredHeadline() {
 
   useEffect(() => {
     const win = window as Window & {
+      __headlineTestSpeed?: number;
       requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
       cancelIdleCallback?: (handle: number) => void;
     };
+    if (win.__headlineTestSpeed !== undefined) {
+      setInteractive(true);
+      return;
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let idleHandle: number | undefined;
@@ -43,11 +48,14 @@ export default function DeferredHeadline() {
     const schedule = () => {
       if (document.hidden || !isVisible || isScheduled) return;
       isScheduled = true;
-      if (win.requestIdleCallback) {
-        idleHandle = win.requestIdleCallback(() => setInteractive(true), { timeout: 1400 });
-      } else {
-        timeoutHandle = window.setTimeout(() => setInteractive(true), 250);
-      }
+      const mount = () => {
+        if (win.requestIdleCallback) {
+          idleHandle = win.requestIdleCallback(() => setInteractive(true), { timeout: 2500 });
+        } else {
+          setInteractive(true);
+        }
+      };
+      timeoutHandle = window.setTimeout(mount, 5000);
     };
     const onVisibility = () => {
       if (!document.hidden) {

@@ -133,6 +133,10 @@ test('hero and headline follow the standard page grid', async ({ page }) => {
 test('outgoing diagram card remains mounted as the rear card', async ({
     page,
 }) => {
+    await page.addInitScript(() => {
+        (window as Window & { __heroDiagramImmediate?: boolean }).__heroDiagramImmediate =
+            true;
+    });
     await page.goto('/');
     const outgoing = page.locator('.hero-diagram--resting-next');
     const outgoingName = await outgoing.locator('h2').textContent();
@@ -219,6 +223,10 @@ test('mobile diagram cards remain inside the hero throughout a flip', async ({
     page,
 }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+        (window as Window & { __heroDiagramImmediate?: boolean }).__heroDiagramImmediate =
+            true;
+    });
     await page.goto('/');
     const button = page.getByRole('button', {
         name: 'Show next project card',

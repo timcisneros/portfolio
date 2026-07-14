@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import MainLayout from "../components/layouts/MainLayout";
-import HeroDiagram from "../components/HeroDiagram";
+import DeferredHeroDiagram from "../components/DeferredHeroDiagram";
 import KeycapSurface from "../components/KeycapSurface";
 import KeycapLabel from "../components/KeycapLabel";
 import DeferredHeadline from "../components/DeferredHeadline";
@@ -79,7 +79,7 @@ function Home() {
               </a>
             </div>
           </div>
-          <HeroDiagram />
+          <DeferredHeroDiagram />
         </div>
       </header>
 

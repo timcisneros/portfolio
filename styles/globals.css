@@ -770,6 +770,12 @@ a {
   min-width: 0;
 }
 
+.hero-diagram-defer {
+  width: 100%;
+  max-width: 520px;
+  justify-self: end;
+}
+
 /* A small deck of project logic cards. The offset cards remain visible behind
    the active one without taking up additional layout space. */
 .hero-diagram-deck {
@@ -2325,6 +2331,7 @@ a {
     grid-template-columns: 1fr;
     gap: 44px;
   }
+  .hero-diagram-defer,
   .hero-diagram-deck {
     justify-self: center;
   }
