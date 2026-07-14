@@ -20,6 +20,7 @@ export interface GridProject {
   tags: string[];
   code: string;
   demo?: string;
+  caseStudy?: string;
 }
 
 export interface SkillGroup {
@@ -50,7 +51,7 @@ export const featuredProjects: ShowcaseProject[] = [
     name: "DSDebug",
     tagline: "Debug DocuSign workflows visually",
     description: [
-      "I built this as a Solutions Engineer at Bitwise Industries. Our team maintained large-scale DocuSign CLM automations, and tracing a variable through a workflow meant reading dense JSON exports by hand. DSDebug parses those exports and renders them as an interactive graph, turning an afternoon of reading JSON into minutes of tracing.",
+      "I built this as a Solutions Engineer at Bitwise Industries. Our team maintained large-scale DocuSign CLM automations, and tracing a variable through a workflow meant reading dense JSON exports by hand. In day-to-day team use, DSDebug turned that afternoon-scale inspection task into minutes of visual tracing.",
       "The 2022 original did one thing: trace variables through a workflow. The 2023 rebuild added a drag-and-drop editor, a template library, and a built-in console for inspecting workflow state, turning a debugging helper into a full authoring tool. Both versions are still deployed.",
     ],
     tags: [
@@ -183,6 +184,7 @@ export const moreProjects: GridProject[] = [
     tags: ["React", "Real-World Tooling"],
     demo: "https://stringing-report.netlify.app/",
     code: "https://github.com/timcisneros/stringing-report-app",
+    caseStudy: "/projects/stringing-report",
   },
   {
     id: "json-name-changer",
@@ -290,9 +292,8 @@ export const experience: Job[] = [
     location: "Bakersfield, CA",
     bullets: [
       "Owned AWS web-application delivery across Next.js interfaces, authentication, APIs, storage, infrastructure, and CI/CD using Cognito, S3, Lambda, API Gateway, DynamoDB, Amplify, and CloudFormation.",
-      "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and reduced variable tracing from an afternoon of JSON inspection to minutes.",
+      "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and, in day-to-day team use, reduced afternoon-scale variable inspection to minutes.",
       "Built [Entity Visualization](https://github.com/timcisneros/entity-visualization), an interactive organization chart using React Flow, S3, and Cognito to trace ownership, related entities, distributions, and connected records; the public source uses anonymized data.",
-      "Collaborated professionally on implementation of the Taleo project at Bitwise.",
       "Implemented an end-to-end HR onboarding workflow across Laserfiche and DocuSign eSignature, with operational visibility through Zoho Analytics and SQL Server dashboards.",
     ],
   },
@@ -306,7 +307,7 @@ export const experience: Job[] = [
     bullets: [
       "Translate client operating procedures into maintained internal applications using React, MongoDB / Express, and AWS serverless workflows across API Gateway, Step Functions, Lambda, and DynamoDB.",
       "Own delivery from workflow discovery through interfaces, APIs, data models, release, and ongoing changes, keeping implementation decisions tied to the work users perform on the job.",
-      "Support pipeline field operations by converting CAD schematics into 2D isometric drawings and by building the related Stringing Report app for structured joint-and-fitting records.",
+      "Support pipeline field operations by converting CAD schematics into 2D isometric drawings and by building the related [Stringing Report app](/projects/stringing-report), replacing repeated paper entry with reusable joint-and-fitting tables and structured exports.",
     ],
   },
   {

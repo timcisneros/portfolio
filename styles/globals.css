@@ -2647,6 +2647,11 @@ a {
   margin: 16px 0 0;
 }
 
+.project-card > .project-link {
+  align-self: flex-start;
+  margin-top: 16px;
+}
+
 .project-card-links {
   display: flex;
   gap: 6px;
@@ -2840,6 +2845,17 @@ a {
 .credential-card p {
   color: var(--text-muted);
   font-size: 0.88rem;
+}
+
+.credential-verification {
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.credential-verification a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
 /* ---------- Skills ---------- */

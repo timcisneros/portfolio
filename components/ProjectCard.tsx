@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 import { GitHubIcon, ExternalIcon, CodeIcon } from './Icons';
 import type { GridProject } from '../data/projects';
@@ -33,6 +34,11 @@ const ProjectCard = ({ project }: { project: GridProject }) => {
             </div>
             <h3>{project.name}</h3>
             <p>{project.description}</p>
+            {project.caseStudy && (
+                <Link href={project.caseStudy} className="project-link project-link-primary">
+                    Read the case study
+                </Link>
+            )}
             <div className="tag-row">
                 {project.tags.map((tag) => (
                     <span key={tag} className="tag">

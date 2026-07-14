@@ -16,8 +16,9 @@ business-process automation. [See it live](https://timcis.com/).
 - A Resend-backed contact API with validation and a direct-email fallback
 
 The featured work connects implementation details to business and operational
-outcomes: DSDebug reduced enterprise workflow tracing from an afternoon to
-minutes; Entity Visualization makes complex ownership structures navigable;
+outcomes: in day-to-day team use, DSDebug reduced an afternoon-scale workflow
+inspection task to minutes; Entity Visualization makes complex ownership
+structures navigable;
 the Self-Hosted YouTube Frontend exercises portable storage, queues, media
 proxying, and resilience; and Ticket System implements auditable agent
 execution with explicit authority and verification gates.

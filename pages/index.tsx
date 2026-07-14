@@ -234,6 +234,17 @@ function Home() {
                 </div>
               ))}
             </div>
+            <p className="credential-verification">
+              Credential records and issuer details are listed on my{" "}
+              <a
+                href="https://www.linkedin.com/in/timcisneros/details/certifications/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                LinkedIn certifications profile
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>

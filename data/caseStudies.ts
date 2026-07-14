@@ -47,7 +47,7 @@ const CASE_STUDIES: CaseStudy[] = [
         name: 'DSDebug',
         tagline: 'Build and debug DocuSign CLM workflows visually',
         tags: ['React', 'Next.js', 'React Flow', 'Chakra UI', 'DocuSign CLM'],
-        employerValue: 'Demonstrates enterprise domain learning, developer-tool design, and a measurable reduction in debugging time for operational workflows.',
+        employerValue: 'Demonstrates enterprise domain learning, developer-tool design, and an observed reduction in day-to-day debugging time for operational workflows.',
         demo: 'https://dsdebug-prod.vercel.app/',
         code: 'https://github.com/timcisneros/dsdebug-2023',
         extraLinks: [
@@ -65,12 +65,12 @@ const CASE_STUDIES: CaseStudy[] = [
             { label: 'Context', value: 'Enterprise DocuSign CLM workflow debugging' },
             { label: 'Implemented', value: 'Variable tracing, graph rendering, visual authoring, and console tooling' },
             { label: 'Constraint', value: 'Make dense exported workflow JSON usable without a manual trace' },
-            { label: 'Outcome', value: 'Reduced an afternoon of JSON inspection to minutes of visual tracing' },
+            { label: 'Outcome', value: 'In team use, reduced an afternoon-scale inspection task to minutes of visual tracing' },
             { label: 'Status', value: '2022 tracer and 2023 workbench both deployed' },
         ],
         intro: [
             'At Bitwise Industries my team maintained large-scale DocuSign CLM automations for enterprise clients. When a workflow misbehaved, the only way to inspect it was to export the definition and read the raw JSON. Hundreds of steps, variables, and routing rules were flattened into a format meant for machines.',
-            'DSDebug turned an afternoon of reading raw JSON exports into minutes of tracing on an interactive graph. The 2022 original was built for exactly that one job: tracing variables through a workflow. The 2023 rebuild kept the tracer and shifted the focus to editing, adding drag-and-drop authoring, a template library, and a console that turned a debugging aid into a full workflow workbench. Both versions are linked above.',
+            'In day-to-day use by my team, DSDebug turned an afternoon-scale raw-JSON inspection task into minutes of tracing on an interactive graph. This is an observed workflow improvement, not a formal benchmark. The 2022 original was built for exactly that one job: tracing variables through a workflow. The 2023 rebuild kept the tracer and shifted the focus to editing, adding drag-and-drop authoring, a template library, and a console that turned a debugging aid into a full workflow workbench. Both versions are linked above.',
             'The workflows behind this tool are classic document automation: a document arrives, gets classified, has data extracted, and is routed through review and signature. At Bitwise I built those pipelines end-to-end, including HR onboarding that ran through Laserfiche processes wired into DocuSign eSignature. DSDebug exists because pipelines like that fail in production and someone has to trace why. The same operational question applies whenever automated workflows or agents act on business processes: when the automation misbehaves, can you see exactly what it did? My [Ticket System](/projects/ticket-system) takes that question on directly for agent-run work.',
         ],
         steps: [
@@ -144,6 +144,14 @@ const CASE_STUDIES: CaseStudy[] = [
                 imageWidth: 1440,
                 imageHeight: 1000,
                 imageAlt: 'Entity Visualization displaying an automatically laid-out ownership graph with navigation and relationship details',
+            },
+            {
+                title: 'Selection turns the overview into a relationship trace',
+                body: 'Selecting an entity marks it in blue and recursively follows its incoming ownership connections. The surrounding graph remains visible, so a user can understand the selected record in context instead of losing the broader structure in a separate detail screen.',
+                image: '/project-imgs/case/entity-visualization-02-trace.png',
+                imageWidth: 1440,
+                imageHeight: 1000,
+                imageAlt: 'Entity Visualization with one anonymized entity selected in blue and its ownership relationships visible across the graph',
             },
         ],
         build: [
@@ -466,6 +474,63 @@ const CASE_STUDIES: CaseStudy[] = [
         },
     },
     {
+        slug: 'stringing-report',
+        name: 'Stringing Report App',
+        tagline: 'Turn pipeline field records into reusable, structured reports',
+        tags: ['React', 'Field Operations', 'Workflow Design', 'Structured Export'],
+        employerValue: 'Demonstrates paid client delivery: learning a specialized field workflow, translating it into a focused interface, and retaining clear evidence without exposing client records.',
+        demo: 'https://stringing-report.netlify.app/',
+        code: 'https://github.com/timcisneros/stringing-report-app',
+        overview: [
+            { label: 'Role', value: 'Independent client application developer through TimCis Media' },
+            { label: 'Context', value: 'Pipeline construction crews recording joints and fittings for stringing reports' },
+            { label: 'Implemented', value: 'Reusable report tables, structured field entry, row duplication, editing, and spreadsheet export' },
+            { label: 'Constraint', value: 'Reflect the field workflow in a simple interface suitable for on-site use' },
+            { label: 'Outcome', value: 'Replaced repeated paper entry with reusable digital tables and exportable records' },
+            { label: 'Status', value: 'Completed professional project retained as an evidence-backed public demonstration' },
+        ],
+        intro: [
+            'I built the Stringing Report App through TimCis Media as part of my professional pipeline-support work. The job was not to make a generic table editor; it was to understand how field crews record joints and fittings, preserve the vocabulary they already use, and reduce repeated paper entry.',
+            'The application keeps each report focused on the fields needed on the job: joint or fitting number, size, length, wall, grade, heat number, purchase order, and comments. Crews can edit rows, copy the preceding row when specifications repeat, keep multiple tables, and export the result for the next part of the reporting process.',
+            'The walkthrough uses fictional representative values created specifically for this portfolio. It contains no client records.',
+        ],
+        steps: [
+            {
+                title: 'A field record shaped around the actual work',
+                body: 'The populated table shows the operational model directly: sequential joints, repeated pipe specifications, traceable heat and purchase-order fields, and location-specific comments. Copy Last Row accelerates the common case without hiding differences, while editing and spreadsheet export keep the record useful after field entry.',
+                image: '/project-imgs/case/stringing-report-01-field-log.png',
+                imageWidth: 1440,
+                imageHeight: 1000,
+                imageAlt: 'Stringing Report App showing three fictional pipeline joint records in a structured field table',
+            },
+        ],
+        build: [
+            'React components model report tables and editable joint or fitting rows; browser persistence keeps working records available between page visits.',
+            'The interface supports repeated-row entry and spreadsheet export because those actions match the surrounding field and reporting workflow rather than a generic CRUD checklist.',
+            'The repository is intentionally presented as completed project history. Its Create React App and React 16 dependencies reflect when it was delivered, while the case study focuses on workflow translation and professional ownership rather than implying a current architecture.',
+        ],
+        deepDive: {
+            label: 'Professional delivery evidence',
+            title: 'Domain learning was part of the implementation',
+            body: [
+                'This project sits alongside my CAD-derived 2D isometric work for pipeline operations. Understanding the records, terminology, and handoff mattered as much as writing the interface. That connection between operating procedure and implementation is also the thread through my enterprise workflow and internal-tool work.',
+                'The public application and repository show the delivered interaction model. The screenshot uses newly entered fictional values so the evidence remains reviewable without presenting client data as portfolio content.',
+            ],
+            artifacts: [
+                {
+                    label: 'src/components',
+                    href: 'https://github.com/timcisneros/stringing-report-app/tree/master/src/components',
+                    note: 'Contains the report-table, entry, editing, and supporting interface components.',
+                },
+                {
+                    label: 'README.md',
+                    href: 'https://github.com/timcisneros/stringing-report-app/blob/master/README.md',
+                    note: 'Documents the field workflow, project status, and historical technology context.',
+                },
+            ],
+        },
+    },
+    {
         slug: 'waydaw',
         name: 'Waydaw',
         tagline: 'Ableton Live 12 on Linux',
@@ -509,6 +574,7 @@ const CASE_STUDY_ORDER = [
     'my-youtube',
     'ticket-system',
     'action-plan',
+    'stringing-report',
     'waydaw',
 ];
 

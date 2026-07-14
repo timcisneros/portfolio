@@ -9,13 +9,17 @@ on the job.
 
 - **[DSDebug](https://github.com/timcisneros/dsdebug-2023)** — Visual tooling
   for building and debugging DocuSign CLM workflows. It turns dense workflow
-  exports into interactive graphs and reduced variable tracing from an
-  afternoon of JSON inspection to minutes.
+  exports into interactive graphs and, in day-to-day team use, reduced an
+  afternoon-scale inspection task to minutes.
 - **[Entity Visualization](https://github.com/timcisneros/entity-visualization)** —
   An anonymized public version of a professional React Flow organization chart
   for tracing ownership, parent and subsidiary relationships, distributions,
   and connected records across complex entity structures. The included dataset
   exercises 142 relationships across 10 charts and 73 entities.
+- **[Stringing Report App](https://github.com/timcisneros/stringing-report-app)** —
+  A professional TimCis Media field-operations tool that replaces repeated
+  paper entry with reusable pipeline joint-and-fitting tables and spreadsheet
+  export. The public case study uses fictional representative records.
 - **[Self-Hosted YouTube](https://github.com/timcisneros/my-youtube)** — A
   private subscription frontend whose server proxies streams, thumbnails, and
   metadata so the browser never contacts Google. Its storage, queue, and worker
@@ -39,6 +43,8 @@ on the job.
   constraints, automated checks, and human verification.
 - Document decisions and failure paths so systems remain understandable after
   the first successful run.
+- Keep learning self-directed and evidence-based: structured coursework,
+  technical references, independent implementation, and professional delivery.
 
 ## Core stack
 

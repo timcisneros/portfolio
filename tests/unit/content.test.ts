@@ -36,7 +36,7 @@ describe('project content integrity', () => {
 
     it('every caseStudy link on a project points to a real case study', () => {
         const slugs = new Set(caseStudies.map((s) => `/projects/${s.slug}`));
-        for (const project of showcase) {
+        for (const project of [...showcase, ...moreProjects]) {
             if (project.caseStudy) {
                 expect(slugs.has(project.caseStudy), project.caseStudy).toBe(
                     true
