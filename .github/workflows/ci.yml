@@ -8,9 +8,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -38,7 +38,7 @@ jobs:
 
       - name: Upload required Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: required-playwright-report
           path: test-results/
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload rendering audit report
         if: ${{ always() && steps.rendering-audit.outcome == 'failure' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rendering-audit-report
           path: test-results/
