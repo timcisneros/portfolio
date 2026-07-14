@@ -16,7 +16,7 @@ Recommended pinned repositories, in order:
 
 1. `dsdebug-2023`
 2. `entity-visualization`
-3. `stringing-report-app`
-4. `my-youtube`
-5. `ticket-system`
+3. `my-youtube`
+4. `ticket-system`
+5. `seo-project`
 6. `portfolio`

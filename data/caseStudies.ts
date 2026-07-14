@@ -507,7 +507,7 @@ const CASE_STUDIES: CaseStudy[] = [
         build: [
             'React components model report tables and editable joint or fitting rows; browser persistence keeps working records available between page visits.',
             'The interface supports repeated-row entry and spreadsheet export because those actions match the surrounding field and reporting workflow rather than a generic CRUD checklist.',
-            'The repository is intentionally presented as completed project history. Its Create React App and React 16 dependencies reflect when it was delivered, while the case study focuses on workflow translation and professional ownership rather than implying a current architecture.',
+            'The interface reflects the period in which it was delivered. The public repository now uses Vite and React 18, replaces its unmaintained export wrapper with a small browser-native export path, passes a high-severity dependency audit, and retains the original workflow without presenting a redesign as new client work.',
         ],
         deepDive: {
             label: 'Professional delivery evidence',
