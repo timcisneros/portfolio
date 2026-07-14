@@ -93,9 +93,13 @@ describe('project content integrity', () => {
         expect(labels).not.toContain('Agent orchestration');
     });
 
-    it('the served resume PDF exists', () => {
-        expect(existsSync(join(PUBLIC, 'Timothy-Cisneros-Resume.pdf'))).toBe(
-            true
-        );
+    it('the served resume PDFs exist', () => {
+        for (const filename of [
+            'Timothy-Cisneros-Resume.pdf',
+            'Timothy-Cisneros-Resume-Full-Stack.pdf',
+            'Timothy-Cisneros-Resume-Applied-AI.pdf',
+        ]) {
+            expect(existsSync(join(PUBLIC, filename))).toBe(true);
+        }
     });
 });

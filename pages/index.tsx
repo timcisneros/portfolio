@@ -157,6 +157,12 @@ function Home() {
                 <DownloadIcon /> Download resume
               </span>
             </a>
+            <p className="resume-variants" aria-label="Role-targeted resume versions">
+              Targeted versions:{" "}
+              <a href="/Timothy-Cisneros-Resume-Full-Stack.pdf">Full-stack</a>
+              <span aria-hidden="true"> · </span>
+              <a href="/Timothy-Cisneros-Resume-Applied-AI.pdf">Applied AI</a>
+            </p>
           </div>
         </div>
       </section>
@@ -323,7 +329,7 @@ function Home() {
               </p>
               <p>
                 I&apos;m based in California. My platform training includes AWS
-                Cloud Practitioner and DocuSign CLM Implementation.
+                Cloud Practitioner and DocuSign CLM Implementation training.
                 I&apos;m looking for full-stack engineering, internal-tools, or
                 business-process automation roles.
               </p>

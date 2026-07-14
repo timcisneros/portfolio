@@ -574,9 +574,15 @@ test('contact API validates input', async ({ request }) => {
 });
 
 test('resume PDF and OG image are served', async ({ request }) => {
-    const pdf = await request.get('/Timothy-Cisneros-Resume.pdf');
-    expect(pdf.status()).toBe(200);
-    expect(pdf.headers()['content-type']).toContain('pdf');
+    for (const path of [
+        '/Timothy-Cisneros-Resume.pdf',
+        '/Timothy-Cisneros-Resume-Full-Stack.pdf',
+        '/Timothy-Cisneros-Resume-Applied-AI.pdf',
+    ]) {
+        const pdf = await request.get(path);
+        expect(pdf.status()).toBe(200);
+        expect(pdf.headers()['content-type']).toContain('pdf');
+    }
 
     const og = await request.get('/api/og?title=Test&subtitle=Testing');
     expect(og.status()).toBe(200);

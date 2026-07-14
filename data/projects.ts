@@ -98,7 +98,7 @@ export const systemsProjects: ShowcaseProject[] = [
       "The server proxies every stream, thumbnail, and piece of metadata. The browser never makes a single request to Google. Chronological subscription feed, DASH playback through Shaka Player, and an import surface so you can import your subscriptions and go.",
       "TypeScript and Express, with every dependency beyond Node optional: SQLite or Postgres, local disk or S3, in-process work or a Redis/BullMQ worker queue. Tested with Playwright e2e, player, and resilience suites.",
     ],
-    tags: ["TypeScript", "Express", "Redis / BullMQ", "Playwright", "Docker"],
+    tags: ["TypeScript + JavaScript", "Express", "Redis / BullMQ", "Playwright", "Docker"],
     image: "/project-imgs/case/myyt-02-watch.png",
     imageWidth: 1440,
     imageHeight: 900,
@@ -271,10 +271,10 @@ export const experience: Job[] = [
     period: "Mar 2021 – May 2023",
     location: "Bakersfield, CA",
     bullets: [
-      "Built and shipped AWS web applications end-to-end: Next.js frontends with CI/CD through Amplify and CloudFormation, backed by Cognito, S3, Lambda, API Gateway, and DynamoDB.",
-      "Created an internal Next.js tool for tracing and querying variables in large-scale DocuSign CLM automations. It was the origin of [DSDebug](/projects/dsdebug), featured above.",
-      "Developed an interactive org chart with React Flow, S3, and Cognito, deployed via GitHub Actions.",
-      "Streamlined HR onboarding with Laserfiche business processes integrated with DocuSign eSignature, and built real-time onboarding dashboards in Zoho Analytics and SQL Server.",
+      "Owned AWS web-application delivery across Next.js interfaces, authentication, APIs, storage, infrastructure, and CI/CD using Cognito, S3, Lambda, API Gateway, DynamoDB, Amplify, and CloudFormation.",
+      "Created [DSDebug](/projects/dsdebug), an internal Next.js tool that converted dense DocuSign CLM workflow exports into interactive graphs and reduced variable tracing from an afternoon of JSON inspection to minutes.",
+      "Delivered an interactive organization chart with React Flow, S3, Cognito, and GitHub Actions, connecting the user interface to authenticated cloud storage and repeatable delivery.",
+      "Implemented an end-to-end HR onboarding workflow across Laserfiche and DocuSign eSignature, with operational visibility through Zoho Analytics and SQL Server dashboards.",
     ],
   },
   {
@@ -285,9 +285,9 @@ export const experience: Job[] = [
     location: "California",
     context: "Official title spanning client software development and digital production",
     bullets: [
-      "Build and maintain internal client applications with React, MongoDB / Express, and AWS serverless workflows using API Gateway, Step Functions, Lambda, and DynamoDB.",
-      "Own implementation across interfaces, APIs, data models, deployment, and maintenance, translating operational workflows into tools people can use on the job.",
-      "Convert CAD pipeline schematics into 2D isometric drawings for field use, in the same operational domain that produced the Stringing Report app.",
+      "Translate client operating procedures into maintained internal applications using React, MongoDB / Express, and AWS serverless workflows across API Gateway, Step Functions, Lambda, and DynamoDB.",
+      "Own delivery from workflow discovery through interfaces, APIs, data models, release, and ongoing changes, keeping implementation decisions tied to the work users perform on the job.",
+      "Support pipeline field operations by converting CAD schematics into 2D isometric drawings and by building the related Stringing Report app for structured joint-and-fitting records.",
     ],
   },
   {
@@ -305,17 +305,17 @@ export const experience: Job[] = [
 
 export const credentials: Credential[] = [
   {
-    name: "AWS Cloud Practitioner",
+    name: "AWS Cloud Practitioner training",
     detail:
       "Core AWS services and use cases, billing and pricing models, and security concepts.",
   },
   {
-    name: "Laserfiche Gold",
+    name: "Laserfiche Gold training",
     detail:
       "Capture, system administration, and integration capabilities across Cloud and On-Prem.",
   },
   {
-    name: "DocuSign CLM Implementation",
+    name: "DocuSign CLM Implementation training",
     detail:
       "System administration, Salesforce integration, and workflow conventions.",
   },
