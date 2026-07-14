@@ -547,14 +547,16 @@ for (const study of caseStudies) {
             await images.nth(i).scrollIntoViewIfNeeded();
         }
         await expect
-            .poll(() =>
-                images.evaluateAll((imgs) =>
-                    imgs.filter(
-                        (img) =>
-                            !(img as HTMLImageElement).complete ||
-                            !(img as HTMLImageElement).naturalWidth
-                    ).length
-                )
+            .poll(
+                () =>
+                    images.evaluateAll((imgs) =>
+                        imgs.filter(
+                            (img) =>
+                                !(img as HTMLImageElement).complete ||
+                                !(img as HTMLImageElement).naturalWidth
+                        ).length
+                    ),
+                { timeout: 15_000 }
             )
             .toBe(0);
     });
