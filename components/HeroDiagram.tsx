@@ -407,6 +407,21 @@ const CARDS = [...PROJECT_CARDS].sort(
 type ProjectLogicCard = (typeof CARDS)[number];
 
 type CardPhase = "preview" | "behind" | "resting" | "entering" | "leaving";
+type SwipeAxis = "pending" | "horizontal" | "vertical";
+
+type SwipeGesture = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startedAt: number;
+  axis: SwipeAxis;
+};
+
+const MOBILE_CARD_QUERY = "(max-width: 820px)";
+const SWIPE_DISTANCE = 48;
+const SWIPE_FLICK_DISTANCE = 28;
+const SWIPE_FLICK_VELOCITY = 0.45;
+const SWIPE_AXIS_SLOP = 8;
 
 const ActiveCard = memo(({
   card,
@@ -459,6 +474,9 @@ const HeroDiagram = () => {
   const activeRef = useRef(0);
   const isTransitioningRef = useRef(false);
   const pendingDirectionRef = useRef<1 | -1 | null>(null);
+  const swipeRef = useRef<SwipeGesture | null>(null);
+  const suppressClickRef = useRef(false);
+  const suppressClickTimerRef = useRef<number | null>(null);
 
   const startCycle = useCallback((direction: 1 | -1) => {
     const from = activeRef.current;
@@ -501,6 +519,90 @@ const HeroDiagram = () => {
   const cycleNext = useCallback(() => cycle(1), [cycle]);
   const next = (active + 1) % CARDS.length;
 
+  const beginSwipe = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      event.pointerType === "mouse" ||
+      !event.isPrimary ||
+      event.button !== 0 ||
+      isTransitioningRef.current ||
+      !window.matchMedia(MOBILE_CARD_QUERY).matches ||
+      (event.target as Element).closest(".hd-card-next")
+    ) {
+      return;
+    }
+
+    swipeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedAt: event.timeStamp,
+      axis: "pending",
+    };
+  }, []);
+
+  const updateSwipe = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = swipeRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    if (gesture.axis !== "pending") return;
+
+    const distanceX = Math.abs(event.clientX - gesture.startX);
+    const distanceY = Math.abs(event.clientY - gesture.startY);
+    if (Math.max(distanceX, distanceY) < SWIPE_AXIS_SLOP) return;
+
+    if (distanceX > distanceY * 1.15) gesture.axis = "horizontal";
+    if (distanceY > distanceX * 1.15) gesture.axis = "vertical";
+  }, []);
+
+  const endSwipe = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = swipeRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    swipeRef.current = null;
+    const distanceX = event.clientX - gesture.startX;
+    const distanceY = event.clientY - gesture.startY;
+    const elapsed = Math.max(event.timeStamp - gesture.startedAt, 1);
+    const isHorizontal =
+      gesture.axis !== "vertical" &&
+      Math.abs(distanceX) > Math.abs(distanceY) * 1.2;
+    const clearsDistance = Math.abs(distanceX) >= SWIPE_DISTANCE;
+    const clearsFlick =
+      Math.abs(distanceX) >= SWIPE_FLICK_DISTANCE &&
+      Math.abs(distanceX) / elapsed >= SWIPE_FLICK_VELOCITY;
+
+    if (!isHorizontal || (!clearsDistance && !clearsFlick)) return;
+
+    // A completed swipe still produces a synthetic click on some browsers.
+    // Consume only that click so the card does not also navigate to its case
+    // study after changing the visible project.
+    suppressClickRef.current = true;
+    if (suppressClickTimerRef.current !== null) {
+      window.clearTimeout(suppressClickTimerRef.current);
+    }
+    suppressClickTimerRef.current = window.setTimeout(() => {
+      suppressClickRef.current = false;
+      suppressClickTimerRef.current = null;
+    }, 400);
+
+    cycle(distanceX < 0 ? 1 : -1);
+  }, [cycle]);
+
+  const cancelSwipe = useCallback(() => {
+    swipeRef.current = null;
+  }, []);
+
+  const suppressSwipeClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClickRef.current = false;
+    if (suppressClickTimerRef.current !== null) {
+      window.clearTimeout(suppressClickTimerRef.current);
+      suppressClickTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (transition && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finishTransition();
@@ -532,13 +634,26 @@ const HeroDiagram = () => {
     };
   }, []);
 
+  useEffect(() => () => {
+    if (suppressClickTimerRef.current !== null) {
+      window.clearTimeout(suppressClickTimerRef.current);
+    }
+  }, []);
+
   return (
     <section
       ref={deckRef}
       className={`hero-diagram-deck${transition ? " is-transitioning" : ""}`}
       aria-label="Project logic diagrams"
     >
-      <div className="hero-diagram-stack">
+      <div
+        className="hero-diagram-stack"
+        onPointerDown={beginSwipe}
+        onPointerMove={updateSwipe}
+        onPointerUp={endSwipe}
+        onPointerCancel={cancelSwipe}
+        onClickCapture={suppressSwipeClick}
+      >
         <span className="hero-card-sheet hero-card-sheet-1" aria-hidden="true" />
         <span className="hero-card-sheet hero-card-sheet-2" aria-hidden="true" />
         <span className="hero-card-sheet hero-card-sheet-3" aria-hidden="true" />

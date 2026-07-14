@@ -75,6 +75,71 @@ test('homepage renders every section', async ({ page }) => {
     expect(sectionOrder).toEqual([...sectionOrder].sort((a, b) => a - b));
 });
 
+test('reload starts at the top while history navigation restores position', async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+
+    // A deliberate section link still behaves like a section link.
+    await page.getByRole('link', { name: 'Engineering' }).click();
+    await expect(page).toHaveURL(/\/#ai$/);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+    // Refreshing that URL starts a fresh view rather than replaying the old
+    // offset or section hash.
+    await page.reload({ waitUntil: 'load' });
+    await expect(page).toHaveURL(/\/$/);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+    // In-app history navigation returns to the prior portfolio position.
+    const walkthrough = page
+        .getByRole('link', { name: 'Read the walkthrough' })
+        .first();
+    await walkthrough.scrollIntoViewIfNeeded();
+    await walkthrough.evaluate((link) => {
+        link.addEventListener(
+            'click',
+            () => {
+                sessionStorage.setItem(
+                    '__test_walkthrough_position',
+                    JSON.stringify({
+                        y: window.scrollY,
+                        linkTop: link.getBoundingClientRect().top,
+                    })
+                );
+            },
+            { capture: true, once: true }
+        );
+    });
+    await walkthrough.click();
+    await expect(page).toHaveURL(/\/projects\//);
+    const positionAtNavigation = await page.evaluate(() =>
+        JSON.parse(
+            sessionStorage.getItem('__test_walkthrough_position') ?? '{}'
+        ) as { y?: number; linkTop?: number }
+    );
+    expect(positionAtNavigation.y).toBeGreaterThan(0);
+    await page.goBack({ waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('h1')).toBeVisible();
+    await expect
+        .poll(async () => {
+            try {
+                return await page.evaluate(() => window.scrollY);
+            } catch {
+                return -1;
+            }
+        })
+        .toBeCloseTo(positionAtNavigation.y ?? -1, 0);
+    await expect
+        .poll(() =>
+            walkthrough.evaluate((link) => link.getBoundingClientRect().top)
+        )
+        .toBeCloseTo(positionAtNavigation.linkTop ?? -1, 0);
+});
+
 test('now page is a current, reciprocal Open Sauce note', async ({ page }) => {
     await page.goto('/now');
     await expect(
@@ -105,7 +170,7 @@ test('headline formatting does not shift following words', async ({ page }) => {
         const fixture = document.createElement('div');
         fixture.className = 'hero';
         fixture.style.cssText =
-            'position:absolute;visibility:hidden;left:0;top:0;pointer-events:none';
+            'position:absolute;opacity:0;left:0;top:0;width:600px;pointer-events:none';
         fixture.innerHTML = `
             <h1>
                 <span class="tw">
@@ -309,6 +374,15 @@ test('mobile diagram cards remain inside the hero throughout a flip', async ({
         })
         .toBe(true);
 
+    const shadowCastingLayers = await page
+        .locator('.hero-diagram, .hero-card-sheet')
+        .evaluateAll((elements) =>
+            elements.filter(
+                (element) => getComputedStyle(element).boxShadow !== 'none'
+            ).length
+        );
+    expect(shadowCastingLayers).toBeLessThanOrEqual(2);
+
     for (const time of [0, 80, 120, 152, 200, 240, 280, 308, 312, 399]) {
         const bounds = await page.evaluate((currentTime) => {
             const hero = document.querySelector<HTMLElement>('.hero')!;
@@ -348,6 +422,100 @@ test('mobile diagram cards remain inside the hero throughout a flip', async ({
             ).toBeLessThanOrEqual(bound.heroRight + 0.5);
         }
     }
+});
+
+test('mobile diagram cards support intentional touch swipes', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => {
+        (window as Window & { __heroDiagramImmediate?: boolean }).__heroDiagramImmediate =
+            true;
+    });
+    await page.goto('/');
+
+    const stack = page.locator('.hero-diagram-stack');
+    const activeCard = () => page.locator('.hero-diagram.is-active');
+    const activeName = () => activeCard().locator('h2');
+    const swipe = async ({
+        pointerId,
+        from,
+        to,
+    }: {
+        pointerId: number;
+        from: { x: number; y: number };
+        to: { x: number; y: number };
+    }) => {
+        const target = activeCard().locator('.hd-card-project-link');
+        await target.dispatchEvent('pointerdown', {
+            pointerId,
+            pointerType: 'touch',
+            isPrimary: true,
+            button: 0,
+            clientX: from.x,
+            clientY: from.y,
+        });
+        await target.dispatchEvent('pointermove', {
+            pointerId,
+            pointerType: 'touch',
+            isPrimary: true,
+            button: 0,
+            clientX: to.x,
+            clientY: to.y,
+        });
+        await target.dispatchEvent('pointerup', {
+            pointerId,
+            pointerType: 'touch',
+            isPrimary: true,
+            button: 0,
+            clientX: to.x,
+            clientY: to.y,
+        });
+    };
+
+    await expect(activeName()).toHaveText('DSDebug');
+    await expect(stack).toHaveCSS('touch-action', 'pan-y');
+    const restingShadowLayers = await page
+        .locator('.hero-diagram, .hero-card-sheet')
+        .evaluateAll((elements) =>
+            elements.filter(
+                (element) => getComputedStyle(element).boxShadow !== 'none'
+            ).length
+        );
+    expect(restingShadowLayers).toBe(1);
+
+    // A scroll-like vertical gesture must leave the selected card alone.
+    await swipe({
+        pointerId: 1,
+        from: { x: 250, y: 400 },
+        to: { x: 244, y: 300 },
+    });
+    await expect(activeName()).toHaveText('DSDebug');
+
+    // Left advances through the stack and consumes the click some mobile
+    // browsers synthesize after pointerup.
+    await swipe({
+        pointerId: 2,
+        from: { x: 320, y: 300 },
+        to: { x: 200, y: 296 },
+    });
+    await expect(activeName()).toHaveText('Self-Hosted YouTube');
+    const syntheticClickWasPrevented = await activeCard()
+        .locator('.hd-card-project-link')
+        .evaluate((link) =>
+            !link.dispatchEvent(
+                new MouseEvent('click', { bubbles: true, cancelable: true })
+            )
+        );
+    expect(syntheticClickWasPrevented).toBe(true);
+    await expect(page).toHaveURL(/\/$/);
+
+    // Right selects the previous card through the existing reverse animation.
+    await swipe({
+        pointerId: 3,
+        from: { x: 100, y: 300 },
+        to: { x: 230, y: 296 },
+    });
+    await expect(activeName()).toHaveText('DSDebug');
 });
 
 test('headline follows a deterministic, non-overflowing animation trajectory', async ({

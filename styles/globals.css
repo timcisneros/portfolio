@@ -801,7 +801,7 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
-  box-shadow: var(--shadow-media);
+  box-shadow: none;
   transform-origin: center bottom;
   backface-visibility: hidden;
   pointer-events: none;
@@ -831,7 +831,7 @@ a {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-media);
+  box-shadow: none;
   transform: none;
   transform-origin: center bottom;
   backface-visibility: hidden;
@@ -855,6 +855,15 @@ a {
 .hero-diagram.is-active {
   pointer-events: auto;
   cursor: pointer;
+  box-shadow: var(--shadow-media);
+}
+
+/* Only real cards that are visibly changing depth cast a shadow. Decorative,
+   preview, and settled rear layers rely on their paper edge instead of
+   accumulating several identical shadows beneath the stack. */
+.hero-diagram--leaving-next,
+.hero-diagram--leaving-previous {
+  box-shadow: var(--shadow-media);
 }
 
 .hero-diagram.is-active:hover {
@@ -1243,6 +1252,10 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .hd-flow-group {
     animation: none;
   }
@@ -2337,6 +2350,11 @@ a {
   .hero-diagram-defer,
   .hero-diagram-deck {
     justify-self: center;
+  }
+  .hero-diagram-stack {
+    /* Preserve vertical page scrolling while reserving horizontal touch
+       movement for cycling the physical card stack. */
+    touch-action: pan-y;
   }
 }
 
