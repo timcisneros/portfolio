@@ -48,7 +48,8 @@ const ThemeToggle = () => {
             title="Toggle theme"
         >
             <span className="theme-toggle-icon" suppressHydrationWarning>
-                {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+                <span className="theme-icon theme-icon-moon"><MoonIcon /></span>
+                <span className="theme-icon theme-icon-sun"><SunIcon /></span>
             </span>
         </button>
     );

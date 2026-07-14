@@ -117,7 +117,7 @@ export const systemsProjects: ShowcaseProject[] = [
       "TypeScript and Express, with every dependency beyond Node optional: SQLite or Postgres, local disk or S3, in-process work or a Redis/BullMQ worker queue. Tested with Playwright e2e, player, and resilience suites.",
     ],
     tags: ["TypeScript + JavaScript", "Express", "Redis / BullMQ", "Playwright", "Docker"],
-    image: "/project-imgs/case/myyt-02-watch.png",
+    image: "/project-imgs/case/myyt-02-watch.webp",
     imageWidth: 1440,
     imageHeight: 900,
     imageAlt:

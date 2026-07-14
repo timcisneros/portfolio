@@ -18,6 +18,8 @@ export interface KeycapMaterial {
 export interface KeycapRegistration {
   /** Bounds occupied by the complete keycap render. */
   rect: DOMRectReadOnly | { x: number; y: number; width: number; height: number };
+  /** Unexpanded CSS box that defines physical projection and mesh aspect. */
+  objectRect?: DOMRectReadOnly | { x: number; y: number; width: number; height: number };
   /** Document coordinates let one scroll revision position the entire scene. */
   coordinateSpace?: "document" | "viewport";
   material: KeycapMaterial;

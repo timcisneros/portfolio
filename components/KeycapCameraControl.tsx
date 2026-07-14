@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent } from "react";
+import { KEYCAP_RENDER_ENGINE_ENABLED } from "../lib/keycap/config";
 import {
   commitKeycapCamera,
   getKeycapCamera,
@@ -15,7 +16,11 @@ const ELEVATION_RANGE = 36;
 export default function KeycapCameraControl() {
   const [camera, setCamera] = useState(getKeycapCamera);
   const [dragging, setDragging] = useState(false);
-  const [backend, setBackend] = useState({ label: "Detecting", reason: "" });
+  const [backend, setBackend] = useState(
+    KEYCAP_RENDER_ENGINE_ENABLED
+      ? { label: "Detecting", reason: "" }
+      : { label: "SVG mode", reason: "The development render engine is disabled in lib/keycap/config.ts." },
+  );
   const padRef = useRef<HTMLDivElement>(null);
   const knobRef = useRef<HTMLSpanElement>(null);
   const elevationRef = useRef<HTMLElement>(null);
@@ -44,13 +49,15 @@ export default function KeycapCameraControl() {
     const updateBackend = () => {
       const compositor = document.querySelector<HTMLElement>(".keycap-webgpu-compositor[data-render-backend]");
       if (!compositor) {
-        setBackend({ label: "Detecting", reason: "The shared compositor has not mounted." });
+        setBackend(KEYCAP_RENDER_ENGINE_ENABLED
+          ? { label: "Detecting", reason: "The shared compositor has not mounted." }
+          : { label: "SVG mode", reason: "The development render engine is disabled in lib/keycap/config.ts." });
         return;
       }
       const renderer = compositor.dataset.renderBackend;
       const analytic = renderer === "webgpu-analytic" || renderer === "software-analytic";
       setBackend({
-        label: renderer === "webgpu-analytic" ? "WebGPU analytic" : renderer === "software-analytic" ? "Software analytic" : "Renderer unavailable",
+        label: renderer === "webgpu-analytic" ? "WebGPU analytic" : renderer === "software-analytic" ? "Software analytic" : renderer === "svg-only" ? "SVG mode" : "Renderer unavailable",
         reason: analytic ? "" : (compositor.dataset.rendererReason || "Waiting for the analytic renderer to initialize."),
       });
     };

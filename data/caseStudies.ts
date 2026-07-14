@@ -77,7 +77,7 @@ const CASE_STUDIES: CaseStudy[] = [
             {
                 title: 'Start with a template, or upload your own',
                 body: 'The workbench opens with a library of real workflow patterns: indexing, routing, contract management, internal approvals, and signature flows. There is also an upload button that accepts any exported workflow definition. The palette on the left holds every DocuSign CLM step type, from Salesforce tasks to signature checkpoints, ready to drag onto the canvas.',
-                image: '/project-imgs/case/dsdebug-01-start.png',
+                image: '/project-imgs/case/dsdebug-01-start.webp',
                 imageWidth: 1440,
                 imageHeight: 900,
                 imageAlt:
@@ -86,7 +86,7 @@ const CASE_STUDIES: CaseStudy[] = [
             {
                 title: 'A 30-step workflow, readable at a glance',
                 body: 'Here is a 30-step contract-management workflow, one drag later. Phases render as labeled groups, including document generation, departmental review, and exception handling, with decision diamonds, success and failure edges, and finish states laid out automatically. What was a wall of JSON is now something you can pan, zoom, and reason about in seconds.',
-                image: '/project-imgs/case/dsdebug-02-graph.png',
+                image: '/project-imgs/case/dsdebug-02-graph.webp',
                 imageWidth: 1440,
                 imageHeight: 900,
                 imageAlt:
@@ -95,7 +95,7 @@ const CASE_STUDIES: CaseStudy[] = [
             {
                 title: 'Every variable, traced',
                 body: 'Loading the template merged 25 variables into the Variables panel, typed, grouped, and expandable: params, vendor names, contract folders, e-form configs, signature dates. Variable tracing is the job the 2022 original existed for, and it survived the rebuild intact: when a workflow of this size breaks, the question is almost always "where does this variable get set, and who reads it?"',
-                image: '/project-imgs/case/dsdebug-03-variables.png',
+                image: '/project-imgs/case/dsdebug-03-variables.webp',
                 imageWidth: 1440,
                 imageHeight: 900,
                 imageAlt:
@@ -104,7 +104,7 @@ const CASE_STUDIES: CaseStudy[] = [
             {
                 title: 'A command line for when you need it',
                 body: 'A built-in command line logs every action (template added, variables merged) and accepts commands like alias nodes with friendly names, list them, or rebuild the start activity.',
-                image: '/project-imgs/case/dsdebug-04-console.png',
+                image: '/project-imgs/case/dsdebug-04-console.webp',
                 imageWidth: 1440,
                 imageHeight: 900,
                 imageAlt:
@@ -272,7 +272,7 @@ const CASE_STUDIES: CaseStudy[] = [
             {
                 title: 'Playback through the server, not Google',
                 body: 'The watch page shows the hard part working: the server extracts the stream (the badge in the header reads "innertube/dash, 0.78s"), and Shaka Player plays adaptive DASH through the proxy with a progressive MP4 fallback. Metadata, subscriber counts, and comments all arrive server-side. This frame was captured mid-playback.',
-                image: '/project-imgs/case/myyt-02-watch.png',
+                image: '/project-imgs/case/myyt-02-watch.webp',
                 imageWidth: 1440,
                 imageHeight: 900,
                 imageAlt:

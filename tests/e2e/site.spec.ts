@@ -290,7 +290,9 @@ test('headline follows a deterministic, non-overflowing animation trajectory', a
             0.006;
     });
     await page.goto('/');
-    await page.locator('.tw').evaluate((element) => {
+    const animatedHeadline = page.locator('.tw[data-telemetry]');
+    await expect(animatedHeadline).toBeVisible();
+    await animatedHeadline.evaluate((element) => {
         const root = element as HTMLElement;
         const states = new Set<string>();
         let overflowed = false;
@@ -381,12 +383,28 @@ test('headline follows a deterministic, non-overflowing animation trajectory', a
                         !/[a-z0-9]/i.test(formatted[0]) ||
                         !/[a-z0-9]/i.test(formatted.at(-1)!)
                     ) {
+                        if (!invalidVisual) {
+                            root.dataset.testInvalidState = JSON.stringify({
+                                line1: line1Text,
+                                line2: line2Text,
+                                format: range,
+                                formatted,
+                            });
+                        }
                         fail('format-leaked');
                     }
                     if (
                         /[a-z0-9]/i.test(text[range.start - 1] ?? '') ||
                         /[a-z0-9]/i.test(text[range.end] ?? '')
                     ) {
+                        if (!invalidVisual) {
+                            root.dataset.testInvalidState = JSON.stringify({
+                                line1: line1Text,
+                                line2: line2Text,
+                                format: range,
+                                formatted,
+                            });
+                        }
                         fail('format-split-word');
                     }
                 }
@@ -412,10 +430,10 @@ test('headline follows a deterministic, non-overflowing animation trajectory', a
     await expect
         .poll(
             async () => {
-                const raw = await page.locator('.tw').getAttribute('data-test-states');
+                const raw = await animatedHeadline.getAttribute('data-test-states');
                 const states: string[] = raw ? JSON.parse(raw) : [];
                 const telemetryRaw = await page
-                    .locator('.tw')
+                    .locator('.tw[data-telemetry]')
                     .getAttribute('data-telemetry');
                 const telemetry = telemetryRaw
                     ? (JSON.parse(telemetryRaw) as { states?: number })
@@ -450,19 +468,19 @@ test('headline follows a deterministic, non-overflowing animation trajectory', a
         });
 
     const states = JSON.parse(
-        (await page.locator('.tw').getAttribute('data-test-states')) ?? '[]'
+        (await animatedHeadline.getAttribute('data-test-states')) ?? '[]'
     ) as string[];
     expect(states.length).toBeGreaterThan(5);
-    await expect(page.locator('.tw')).toHaveAttribute(
+    await expect(animatedHeadline).toHaveAttribute(
         'data-test-overflowed',
         'false'
     );
-    await expect(page.locator('.tw')).toHaveAttribute(
+    await expect(animatedHeadline).toHaveAttribute(
         'data-test-invalid-visual',
         'false'
     );
     const telemetry = JSON.parse(
-        (await page.locator('.tw').getAttribute('data-telemetry')) ?? '{}'
+        (await animatedHeadline.getAttribute('data-telemetry')) ?? '{}'
     ) as {
         states: number;
         modes: { stmt: number; q: number; phrase: number };
@@ -498,28 +516,55 @@ test('headline follows a deterministic, non-overflowing animation trajectory', a
         name: 'Pause headline animation',
     });
     await toggle.click();
-    const pausedState = await page.locator('.tw').evaluate((element) => [
+    const pausedState = await animatedHeadline.evaluate((element) => [
         element.getAttribute('data-line1'),
         element.getAttribute('data-line2'),
     ]);
     await page.waitForTimeout(200);
-    await expect(page.locator('.tw')).toHaveAttribute(
+    await expect(animatedHeadline).toHaveAttribute(
         'data-line1',
         pausedState[0] ?? ''
     );
-    await expect(page.locator('.tw')).toHaveAttribute(
+    await expect(animatedHeadline).toHaveAttribute(
         'data-line2',
         pausedState[1] ?? ''
     );
     await page.getByRole('button', { name: 'Resume headline animation' }).click();
     await expect
         .poll(async () =>
-            page.locator('.tw').evaluate((element) => [
+            animatedHeadline.evaluate((element) => [
                 element.getAttribute('data-line1'),
                 element.getAttribute('data-line2'),
             ])
         )
         .not.toEqual(pausedState);
+});
+
+test('long keycap legends stay inside their SVG and narrow viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.goto('/projects/dsdebug');
+    const button = page.getByRole('link', { name: 'View source on GitHub' });
+    await expect(button).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    const geometry = await button.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        const fallback = element.querySelector<HTMLElement>('.keycap-fallback-content');
+        const svg = element.querySelector<SVGSVGElement>('.keycap-fallback-svg');
+        return {
+            left: bounds.left,
+            right: bounds.right,
+            viewport: window.innerWidth,
+            fallbackClientWidth: fallback?.clientWidth ?? 0,
+            fallbackScrollWidth: fallback?.scrollWidth ?? 0,
+            svgWidth: svg?.getBoundingClientRect().width ?? 0,
+        };
+    });
+
+    expect(geometry.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
+    expect(geometry.fallbackScrollWidth).toBeLessThanOrEqual(geometry.fallbackClientWidth + 1);
+    expect(geometry.svgWidth).toBeGreaterThanOrEqual(geometry.fallbackScrollWidth);
 });
 
 test('featured project links to its walkthrough', async ({ page }) => {

@@ -65,7 +65,7 @@ test('uses one shared compositor and removes the layered SVG renderer', async ({
         }));
         expect(state.backend, state.reason).toBe('webgpu-analytic');
         await expect(page.locator('html')).toHaveAttribute('data-keycap-legends', 'ready');
-        await expect(compositor).toHaveAttribute('data-legend-atlas', '1024x768');
+        await expect(compositor).toHaveAttribute('data-legend-atlas', '2048x768');
         await expect
             .poll(async () => Number(await compositor.getAttribute('data-legend-instances')))
             .toBeGreaterThan(0);
@@ -118,6 +118,25 @@ test('uses one shared compositor and removes the layered SVG renderer', async ({
     await page.screenshot({ path: '/tmp/keycap-default-browser.png' });
 });
 
+test('falls through to the custom software renderer when WebGPU initialization fails', async ({ page }) => {
+    await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'gpu', {
+            configurable: true,
+            value: {
+                requestAdapter: async () => { throw new Error('intentional adapter failure'); },
+                getPreferredCanvasFormat: () => 'bgra8unorm',
+            },
+        });
+    });
+    await page.reload();
+    const compositor = page.locator(compositorSelector);
+    await expect(compositor).toHaveAttribute('data-render-backend', 'software-analytic');
+    await expect(compositor).toHaveAttribute('data-renderer-state', 'ready');
+    await expect(compositor).toHaveAttribute('data-webgpu-failure', /intentional adapter failure/);
+    await waitForSettledScene(page);
+    await expect(page.locator('html')).toHaveAttribute('data-keycap-renderer', 'webgpu');
+});
+
 test('keeps intrinsic controls content-sized and the submit control full-width', async ({
     page,
 }) => {
@@ -158,6 +177,55 @@ test('keeps intrinsic controls content-sized and the submit control full-width',
 
     expect(Math.abs(submitBounds.width - formBounds.width)).toBeLessThan(1);
     expect(Math.abs(instanceBounds.width - submitBounds.width)).toBeLessThan(1);
+});
+
+test('recompiles live CSS text requirements into the physical surface', async ({ page }) => {
+    const button = page.locator('.hero-actions .btn').first();
+    await expect(button).toHaveAttribute('data-keycap-text-contract', 'exact');
+    await expect(button).not.toHaveAttribute('data-keycap-text-issues', /.+/);
+
+    const compositor = page.locator(compositorSelector);
+    const before = Number(await compositor.getAttribute('data-scene-version'));
+    const assetBefore = await button.locator('.keycap-content-image').getAttribute('data-keycap-asset-key');
+
+    await button.evaluate((element) => {
+        element.setAttribute('style', '--cap-top: rgb(30, 90, 140); --keycap-roughness: 0.62; --keycap-ambient: 0.11');
+        const label = element.querySelector('.btn-cap') as HTMLElement;
+        label.style.letterSpacing = '0.12em';
+        label.style.color = 'rgb(245, 230, 110)';
+    });
+    await expect(button).toHaveAttribute('data-keycap-text-contract', 'exact');
+    await expect(button).toHaveAttribute('data-keycap-material-contract', 'exact');
+    await expect.poll(() => button.locator('.keycap-content-image').getAttribute('data-keycap-asset-key'))
+        .not.toBe(assetBefore);
+    await expect.poll(() => compositor.evaluate((element) => Number((element as HTMLElement).dataset.sceneVersion)))
+        .toBeGreaterThan(before);
+});
+
+test('keeps a stable native SVG legend alongside the fingerprinted render asset', async ({ page }) => {
+    const buttons = page.locator('.btn');
+    await expect(buttons.first()).toHaveAttribute('data-keycap-text-contract', 'exact');
+    const assets = await buttons.evaluateAll((elements) => elements.map((element) => {
+        const image = element.querySelector<SVGImageElement>('.keycap-content-image');
+        return {
+            key: image?.dataset.keycapAssetKey,
+            url: image?.dataset.keycapAssetUrl,
+            href: image?.getAttribute('href'),
+            font: image?.dataset.keycapFontFingerprint,
+            sourceTextNodes: element.querySelectorAll('.keycap-content-svg text').length,
+            fallbackTextNodes: element.querySelectorAll('.keycap-fallback-content > span').length,
+            imageOpacity: image ? getComputedStyle(image).opacity : null,
+        };
+    }));
+    for (const asset of assets) {
+        expect(asset.key).toMatch(/^[a-f0-9]{64}$/);
+        expect(asset.font).toMatch(/^[a-f0-9]{64}$/);
+        expect(asset.url).toBe(asset.href);
+        expect(asset.url).toMatch(/^blob:/);
+        expect(asset.sourceTextNodes).toBe(1);
+        expect(asset.fallbackTextNodes).toBe(1);
+        expect(asset.imageOpacity).toBe('0');
+    }
 });
 
 test('rapid camera motion is committed as one shared scene frame', async ({

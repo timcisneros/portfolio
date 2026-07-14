@@ -1,7 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 
 import Navbar from '../Navbar';
 import Footer from '../Footer';
@@ -57,6 +56,20 @@ const MainLayout = ({
                 <title>{title}</title>
                 <meta name="description" content={description} />
                 <link rel="canonical" href={canonical} />
+                <link
+                    rel="preload"
+                    href="/fonts/InstrumentSans-variable.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossOrigin="anonymous"
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/SpaceGrotesk-variable.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossOrigin="anonymous"
+                />
                 <meta
                     name="theme-color"
                     media="(prefers-color-scheme: dark)"

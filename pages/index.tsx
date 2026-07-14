@@ -5,11 +5,12 @@ import Link from "next/link";
 import MainLayout from "../components/layouts/MainLayout";
 import HeroDiagram from "../components/HeroDiagram";
 import KeycapSurface from "../components/KeycapSurface";
-import TypewriterHeadline from "../components/TypewriterHeadline";
+import KeycapLabel from "../components/KeycapLabel";
+import DeferredHeadline from "../components/DeferredHeadline";
 import { renderInline } from "../components/richText";
 import FeaturedProject from "../components/FeaturedProject";
 import ProjectCard from "../components/ProjectCard";
-import ContactForm from "../components/ContactForm";
+import DeferredContactForm from "../components/DeferredContactForm";
 import {
   GitHubIcon,
   MailIcon,
@@ -43,7 +44,7 @@ function Home() {
           <div className="hero-copy">
             <div className="hero-headline">
               <h1 aria-label="Software that works for you.">
-                <TypewriterHeadline />
+                <DeferredHeadline />
               </h1>
               <button
                 type="button"
@@ -62,25 +63,19 @@ function Home() {
               through TimCis Media.
             </p>
             <div className="hero-actions">
-              <a href="#projects" className="btn btn-primary">
+              <a href="#projects" className="btn btn-primary btn-projects">
                 <KeycapSurface />
-                <span className="btn-cap">My projects</span>
+                <KeycapLabel>My projects</KeycapLabel>
               </a>
 
-              <a href="/Timothy-Cisneros-Resume.pdf" className="btn btn-ghost">
+              <Link href="/resume" className="btn btn-ghost">
                 <KeycapSurface />
-                <span className="btn-cap">
-                  <DownloadIcon />
-                  Resume
-                </span>
-              </a>
+                <KeycapLabel icon={<DownloadIcon />}>Resume</KeycapLabel>
+              </Link>
 
               <a href="#contact" className="btn btn-gray">
                 <KeycapSurface />
-                <span className="btn-cap">
-                  <MailIcon />
-                  Email me
-                </span>
+                <KeycapLabel icon={<MailIcon />}>Email me</KeycapLabel>
               </a>
             </div>
           </div>
@@ -151,17 +146,15 @@ function Home() {
             ))}
           </div>
           <div className="xp-cta">
-            <a href="/Timothy-Cisneros-Resume.pdf" className="btn btn-ghost">
+            <Link href="/resume" className="btn btn-ghost">
               <KeycapSurface />
-              <span className="btn-cap">
-                <DownloadIcon /> Download resume
-              </span>
-            </a>
+              <KeycapLabel icon={<DownloadIcon />}>Download resume</KeycapLabel>
+            </Link>
             <p className="resume-variants" aria-label="Role-targeted resume versions">
               Targeted versions:{" "}
-              <a href="/Timothy-Cisneros-Resume-Full-Stack.pdf">Full-stack</a>
+              <Link href="/resume#downloads">Full-stack</Link>
               <span aria-hidden="true"> · </span>
-              <a href="/Timothy-Cisneros-Resume-Applied-AI.pdf">Applied AI</a>
+              <Link href="/resume#downloads">Applied AI</Link>
             </p>
           </div>
         </div>
@@ -235,7 +228,7 @@ function Home() {
               ))}
             </div>
             <p className="credential-verification">
-              Credential records and issuer details are listed on my{" "}
+              Public credential dates, status, and issuer records are listed on my{" "}
               <a
                 href="https://www.linkedin.com/in/timcisneros/details/certifications/"
                 target="_blank"
@@ -333,7 +326,7 @@ function Home() {
                 At Bitwise Industries I was a Solutions Engineer shipping
                 AWS-backed web apps, automating HR onboarding end-to-end, and
                 built{" "}
-                <Link href="/projects/dsdebug">
+                <Link href="/projects/dsdebug" className="dsdebug-link">
                   <strong>DSDebug</strong>
                 </Link>
                 , an internal tool that turned unreadable DocuSign CLM workflow
@@ -342,8 +335,8 @@ function Home() {
               <p>
                 These days I build business applications for clients through
                 TimCis Media, my independent freelance and part-time business,
-                where my digital production role includes React, Express, and
-                AWS serverless software delivery.
+                where I work as a digital producer and independent software
+                developer delivering React, Express, and AWS serverless systems.
               </p>
               <p>
                 I&apos;m a self-taught developer whose education combines
@@ -365,14 +358,14 @@ function Home() {
             automation roles.
             If that sounds like your team, my inbox is open.
           </p>
-          <ContactForm />
+          <DeferredContactForm />
           <div className="contact-links">
             <a href="mailto:tcisneros.cis@gmail.com" className="contact-link">
               <MailIcon /> Email
             </a>
-            <a href="/Timothy-Cisneros-Resume.pdf" className="contact-link">
+            <Link href="/resume" className="contact-link">
               <DownloadIcon /> Resume
-            </a>
+            </Link>
             <a
               href="https://github.com/timcisneros"
               target="_blank"

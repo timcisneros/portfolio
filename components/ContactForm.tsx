@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import KeycapSurface from "./KeycapSurface";
+import KeycapLabel from "./KeycapLabel";
 
 type FormStatus = "idle" | "sending" | "sent" | "error";
 
@@ -74,9 +75,7 @@ const ContactForm = () => {
         disabled={status === "sending"}
       >
         <KeycapSurface />
-        <span className="btn-cap">
-          {status === "sending" ? "Sending…" : "Send"}
-        </span>
+        <KeycapLabel>{status === "sending" ? "Sending..." : "Send"}</KeycapLabel>
       </button>
       {status === "error" && (
         <p className="form-status form-status-err" role="alert">

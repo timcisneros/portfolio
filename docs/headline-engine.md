@@ -159,6 +159,115 @@ When adding a subject, verb, or object:
 Do not add vocabulary merely to increase combination count. It should create a
 meaningful new idea surface.
 
+The evidence-backed specialty subjects currently include `Workflow tools`,
+`Agent systems`, `Cloud applications`, and `Field tools`. Their profiles are
+intentionally explicit rather than inherited from broad software kinds:
+
+- workflow tools clarify and expose workflows and system behavior;
+- agent systems expose execution history and support teams without claiming
+  authority over them;
+- cloud applications connect application layers and support operational work;
+- field tools structure field data and generate the reports demonstrated by
+  the Stringing Report project.
+
+The related objects `business processes`, `execution history`, and `system
+behavior` represent demonstrated operational, debugging, and auditable-agent
+work. Do not broaden them into unrestricted technical catchalls.
+
+A second evidence tier covers `Business applications`, `Workflow visualizers`,
+`Audit trails`, `Data pipelines`, `Serverless systems`, and `Test suites`. These
+map directly to client application delivery, DSDebug, Ticket System, AWS
+workflow implementation, and the resilience and verification suites described
+in the case studies. Test suites validate system behavior and surface errors;
+they do not “verify edge cases,” people, judgment, or decisions.
+
+The final specialty tier covers `Full-stack applications`, `Operational
+software`, `Developer tools`, `AI workflows`, `Self-hosted apps`, and
+`Diagnostic tools`. It maps to end-to-end application ownership, maintained
+client operations software, DSDebug and Waydaw, controlled agent execution, the
+self-hosted YouTube frontend, and evidence-driven debugging. `failure paths`
+and `application state` are technical inspection objects only. AI workflows may
+surface their execution history and support teams; they may not monitor,
+evaluate, direct, or replace people.
+
+Once artifact coverage is broad, prefer evidence-backed construction prompts
+over additional noun synonyms. Current prompts deliberately cover workflow
+provenance, understandable failure, explicit human authorization, evidence for
+automated actions, software fitting real work, field-to-report delivery, and
+swappable infrastructure. These ideas come directly from DSDebug, Ticket
+System, client delivery, Stringing Report, and the self-hosted media system.
+They expand what a visitor can imagine without increasing the semantic graph's
+combination surface.
+
+Delivery-practice prompts cover another evidence-backed layer: deciding what
+should remain human work, graceful integration failure, repeatable deployment,
+workflow discovery through maintenance, narrow product scope, explicit fallback
+paths, shared data models, context crossing system boundaries, and software
+changing after launch. Keep these as complete constructions because splitting
+their terms into the semantic graph would turn nuanced engineering positions
+into vague promises.
+
+### Claim Strength
+
+Declarative headlines require a visible mechanism or direct portfolio evidence.
+Do not claim that a broad artifact category gives time back, prevents deployment
+surprises, protects data, empowers people, or supports a team merely because
+software could theoretically do so. Prefer concrete actions such as organizing
+records, synchronizing data, tracing a failure path, or surfacing execution
+history. Keep uncertain outcomes in explicit questions.
+
+`empower` remains in the vocabulary because it is part of the intended stance,
+but its capability profiles are exploratory. It may appear in `How could...`
+questions and must not become a statement such as “Tools empower teams.”
+
+Avoid circular audience claims. A person described as a `user` or `your user`
+already has a relationship with the digital artifact, so general software,
+apps, programs, tools, and assistants must not ask whether they can “work for
+users.” `Models work for users` remains an intentional exception: for AI models,
+the phrase communicates subordinate human control rather than baseline product
+usability.
+
+The same rule applies to baseline help/serve/support claims for artifacts whose
+audience is inherent in the noun. Websites, apps, platforms, products,
+features, interfaces, frontends, and UIs do not “help users” merely to remain
+reachable. Keep their concrete product, workflow, data, and operational
+capabilities instead. Subjects without a concrete relationship are removed
+from the active graph; interrogative phrasing does not preserve a weak claim.
+
+APIs, forms, and search tools use explicit runtime profiles rather than the
+role manifest's broader compiled examples. APIs connect product/stack layers
+and synchronize data. Forms organize field data; they neither make a generic
+data-validation claim nor route or organize approvals. Search tools surface records or data, not
+abstract `patterns`.
+
+Utility subjects are similarly narrow: queues route requests, parsers validate
+records/data, plugins connect product or stack layers, widgets expose signals,
+and workbenches organize records. Pipelines no longer organize handoffs,
+schedulers no longer simplify workflows, and the generic `Solutions support
+startups` exception has been removed.
+
+Subjects with no distinct portfolio signal are disabled before graph
+construction: programs, products, features, websites, storefronts, schedulers,
+bots, chatbots, APIs, platforms, plugins, queues, search tools, parsers, test
+suites, code, modules, networks, pipelines, infrastructure, backends, serverless
+systems, workbenches, self-hosted apps, raw data, and generic apps. These can
+still appear elsewhere
+in the portfolio; disabling a headline subject only means its available
+relationships were baseline claims.
+The active-index map filters their subject kinds and contextual emoji in lockstep.
+Likewise, approvals, clients, customers, developers, field data, founders, creators, requests,
+startups, support teams, time, and the redundant `your pipeline`, `your workflow`,
+and `your workflows` objects are disabled
+as generated objects after removing their generic relationships and the
+`equip` and `save` verbs. Do not restore those words merely to increase
+combination count.
+
+Frameworks and toolkits remain because they are intentional portfolio language,
+but `simplify your workflow` is exploratory-only. General software and tools no
+longer help or support inherent `users`; models retain only the deliberate
+`work for users` servant stance. Automation and internal tools no longer claim
+to save time, and internal tools no longer generically support teams.
+
 ### Communication Vocabulary
 
 Communication is represented as an outcome of demonstrated technical work, not
@@ -179,6 +288,10 @@ adds complex workflows, workflow state, real-time updates, operational metrics,
 field data, and field reports as outcomes. Existing subjects carry narrow
 relationships: dashboards surface updates and metrics, visualizations clarify
 workflows, forms organize field data, and internal tools generate field reports.
+Prompt-only language may also describe translating an operating procedure into
+maintained software because the experience section explicitly documents that
+client-delivery practice. It must remain about understanding operational work,
+not a claim of communications specialization.
 Do not infer unsupported specialties such as documentation, briefs,
 communication strategy, audience management, or client communications.
 
@@ -377,10 +490,17 @@ cleared. Do not let a formatted range collapse during whole-line deletion,
 expand over replacement text, and then clear silently at commit. That sequence
 looks like partial formatting corruption followed by an unexplained style loss.
 
-Insertion exactly at the end of a formatted range is outside the range. Insertion
-into an empty formatted replacement range extends the range. This distinction
-prevents style leakage while preserving formatting during a selected-word
-replacement.
+Whitespace or punctuation inserted exactly at the end of a formatted range is
+outside the range. Letters and numbers appended directly to a nonempty
+formatted word inherit its style, matching ordinary text-editor behavior and
+preventing a preserved fragment from becoming the only styled part of the
+replacement. Insertion into an empty formatted replacement range extends the
+range through explicit replacement affinity.
+
+After each text mutation, a nonempty format range is normalized to the current
+alphanumeric token boundaries. This repairs surviving fragments during complex
+rewrites without crossing whitespace or punctuation, so a visitor never sees
+only a few letters of one word retain bold, italic, or underline styling.
 
 Deleting a formatted word's tail creates replacement affinity at the remaining
 range end even when a shared prefix keeps the range nonempty. Retyped suffixes
@@ -450,8 +570,8 @@ new behavior to solve a distribution problem.
   resizing clear the cache and update the stored frame width.
 - Finished lines may not overflow the fixed headline box.
 - Fit checks reserve a small amount of horizontal space for the caret, text
-  stroke, underline, and paint-only italic overhang; candidates may not consume
-  the box's full plain-text width.
+  stroke, underline, paint-only italic overhang, and emoji fallback-font width;
+  candidates may not consume the box's full plain-text width.
 - In-progress text is not treated as a committed fit state.
 - The animation pauses when the tab is hidden or the hero is off-screen.
 - The visible pause/resume control preserves the active transaction.
@@ -562,6 +682,46 @@ when its object and mechanism preserve human agency and the claim is credible.
 AI models working for people can also be a useful frontier-oriented idea. These
 preferences never override triple validity or plausibility.
 
+Broad preferred nouns still need concrete roles. Experiences and solutions
+simplify workflows or business processes; services prepare
+a launch; widgets clarify workflow state; ideas clarify a roadmap or next step. Do not
+restore generic audience claims merely to keep a preferred noun reachable.
+
+### Editorial Eligibility
+
+Semantic truth is necessary but not sufficient for headline output. A subject
+capability carries an `editorial` classification:
+
+- `informative` relationships may enter the generated triple graph;
+- `inherent` relationships are true but suppressed because they merely restate
+  the subject's baseline function.
+
+The grammar audit reports the suppressed capability count and excludes inherent
+relationships from dead-capability failures. This keeps the reason for a cut in
+the model without allowing it into statements, questions, or edit transitions.
+Subjects whose only relationships are inherent are disabled before graph
+construction.
+
+`Field tools | generate | field reports` is the one intentional isolated
+triple. It is specific portfolio evidence, and adding a generic Tool or App
+neighbor would reduce editorial quality merely to improve graph connectivity.
+
+Each capability also declares its eligible constructions: `statement`,
+`question`, and/or `stance`. Human-serving Software, Systems, Tech, and
+Assistant relationships are stance-only unless a deliberately exploratory
+question is useful. This preserves positions such as “Software should serve
+your team” without producing generic claims such as “Software supports teams”
+or baseline questions such as “Could systems work for teams?”
+
+The generic `route` verb is intentionally absent. Once baseline queue routing
+was suppressed, no remaining routing relationship carried enough specific
+portfolio value to justify keeping the verb reachable. The same applies to
+generic `help` after baseline Tool audience claims were suppressed, and to
+`sync`, `connect`, and `monitor` after their remaining relationships were
+classified as inherent. `Protect` is absent because hosting or data-storage
+topology alone does not substantiate a security guarantee. `Reconcile` is
+absent after database and pipeline baseline claims were removed.
+
 Stances such as "Software should serve your teams" are intentionally useful.
 They communicate that technology is subordinate to people. Do not remove all
 stance constructions while eliminating generic claims.
@@ -600,6 +760,46 @@ overbroad, unimpressive, or contrary to human agency:
 - websites working for startups as an unimpressive given;
 - solutions helping creators or products working for creators when the claim is
   obvious and adds no useful idea.
+- programs or apps generically working for people;
+- experiences generically helping or serving users;
+- services merely serving customers, or features merely supporting a product;
+- ideas or prototypes "preparing" an object other than a launch;
+- forms validating arbitrary data or workbenches organizing arbitrary data;
+- frontends connecting a product, modules clarifying decision context, or
+  widgets vaguely clarifying signals;
+- analytics measuring an entire business or insights generically supporting it.
+- consoles generically tracing errors or a stack when no more specific
+  diagnostic mechanism is expressed.
+- consoles or developer tools merely debugging or displaying errors;
+- queues routing requests, search tools surfacing records, parsers validating
+  records, or importers synchronizing records;
+- data pipelines merely synchronizing data, audit trails merely displaying
+  execution history, workflow visualizers merely showing workflow state, or
+  test suites merely validating behavior.
+- APIs, platforms, plugins, or integrations merely connecting or synchronizing
+  their expected systems;
+- dashboards, reports, databases, or widgets merely displaying, organizing, or
+  synchronizing the information inherent in their names;
+- consoles debugging a stack, backends organizing requests, portals vaguely
+  clarifying requests, or interfaces and UIs vaguely clarifying operations.
+- workflows acting on `your workflow`, automation merely automating busywork,
+  or tools making generic claims about helping developers and teams;
+- infrastructure, networks, backends, modules, pipelines, or code merely
+  restating their expected connection, support, or synchronization functions;
+- admin panels merely organizing the records, requests, or approvals inherent
+  in an administrative interface.
+- apps or scripts generically organizing data, workflows or flows organizing
+  operations, and internal tools generically organizing requests;
+- dashboards or reports vaguely clarifying context or patterns;
+- workflow, developer, or diagnostic tools merely displaying or debugging the
+  errors inherent in their diagnostic role;
+- audit trails merely restating execution history or AI workflows merely
+  organizing requests.
+- raw data claiming to clarify or surface its own meaning;
+- workflows or flows claiming to clarify operations, internal tools vaguely
+  clarifying requests, or developer tools merely displaying errors;
+- generic tools and apps duplicating the field-report capability owned by the
+  more specific Field tools subject.
 
 These examples establish reusable rules:
 

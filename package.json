@@ -10,9 +10,12 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run tests/unit",
         "test:e2e": "playwright test",
-        "test:e2e:portfolio": "playwright test tests/e2e/site.spec.ts --grep \"homepage renders|featured project links|case study .* renders|legacy routes redirect|contact API validates|resume PDF and OG image\" --workers=2",
+        "test:e2e:portfolio": "playwright test tests/e2e/site.spec.ts --grep \"homepage renders|featured project links|case study .* renders|legacy routes redirect|contact API validates|resume PDF and OG image|long keycap legends\" --workers=2",
         "test:e2e:a11y": "playwright test tests/e2e/accessibility.spec.ts --workers=2",
-        "test:e2e:rendering": "playwright test tests/e2e/.cpu-render-audit.spec.ts tests/e2e/keycap-architecture.spec.ts tests/e2e/site.spec.ts --grep \"keycap|compositor|camera|headline|diagram card|CSS control|software backend\" --workers=1"
+        "test:e2e:performance": "playwright test tests/e2e/performance.spec.ts --workers=1",
+        "test:performance-budget": "npm run build && node scripts/check-performance-budget.mjs",
+        "test:e2e:rendering": "playwright test tests/e2e/site.spec.ts --grep \"headline|diagram card\" --workers=1",
+        "test:e2e:render-engine": "playwright test tests/e2e/.cpu-render-audit.spec.ts tests/e2e/keycap-architecture.spec.ts --grep \"keycap|compositor|camera|CSS control|software backend\" --workers=1"
     },
     "dependencies": {
         "@vercel/analytics": "^2.0.1",

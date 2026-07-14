@@ -72,6 +72,22 @@ export const transformRangeAfterDelete = (
 
 export type FormattingAffinity = { position: number } | null;
 
+const isWordCharacter = (character: string) => /[\p{L}\p{N}]/u.test(character);
+
+export const expandRangeToWordBoundaries = (
+    text: string,
+    range: [number, number]
+): [number, number] => {
+    let [start, end] = range;
+    if (start === end) return range;
+    while (start < end && !isWordCharacter(text[start] ?? '')) start += 1;
+    while (end > start && !isWordCharacter(text[end - 1] ?? '')) end -= 1;
+    if (start === end) return [start, end];
+    while (start > 0 && isWordCharacter(text[start - 1] ?? '')) start -= 1;
+    while (end < text.length && isWordCharacter(text[end] ?? '')) end += 1;
+    return [start, end];
+};
+
 export const transformFormattedDelete = (
     range: [number, number],
     deleted: [number, number],
@@ -129,6 +145,14 @@ export const transformFormattedInsert = (
         start += count;
         end += count;
     } else if (position >= start && position < end) {
+        end += count;
+    } else if (
+        position === end &&
+        end > start &&
+        /^[\p{L}\p{N}]+$/u.test(text)
+    ) {
+        // Appending letters to a formatted word inherits its active style,
+        // matching normal text-editor behavior without leaking into spaces.
         end += count;
     }
     return { range: [start, end], affinity };

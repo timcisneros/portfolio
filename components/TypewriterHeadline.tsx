@@ -18,6 +18,7 @@ import {
     type TimingProfile,
 } from '../lib/headline/policy';
 import {
+    expandRangeToWordBoundaries,
     type FormattingAffinity,
     nextGraphemeBoundary,
     normalizeGraphemeRange,
@@ -68,7 +69,7 @@ import {
 //
 // The first sentence renders on the server so it is whole before JS runs and
 // for prefers-reduced-motion users, who never see it move.
-const NOUNS = [
+const ALL_NOUNS = [
     { word: 'Software', plural: false },
     { word: 'Systems', plural: true },
     { word: 'Programs', plural: true },
@@ -129,7 +130,67 @@ const NOUNS = [
     { word: 'Consoles', plural: true },
     { word: 'Command centers', plural: true },
     { word: 'Visualizations', plural: true },
+    { word: 'Workflow tools', plural: true },
+    { word: 'Agent systems', plural: true },
+    { word: 'Cloud applications', plural: true },
+    { word: 'Field tools', plural: true },
+    { word: 'Business applications', plural: true },
+    { word: 'Workflow visualizers', plural: true },
+    { word: 'Audit trails', plural: true },
+    { word: 'Data pipelines', plural: true },
+    { word: 'Serverless systems', plural: true },
+    { word: 'Test suites', plural: true },
+    { word: 'Full-stack applications', plural: true },
+    { word: 'Operational software', plural: false },
+    { word: 'Developer tools', plural: true },
+    { word: 'AI workflows', plural: true },
+    { word: 'Self-hosted apps', plural: true },
+    { word: 'Diagnostic tools', plural: true },
 ];
+const DISABLED_SUBJECTS = new Set([
+    'Bots',
+    'Chatbots',
+    'Code',
+    'Backends',
+    'Features',
+    'Infrastructure',
+    'Modules',
+    'Networks',
+    'Pipelines',
+    'APIs',
+    'Agents',
+    'Apps',
+    'Command centers',
+    'Consoles',
+    'Cloud applications',
+    'Data pipelines',
+    'Data',
+    'Databases',
+    'Devtools',
+    'Forms',
+    'Full-stack applications',
+    'Importers',
+    'Admin panels',
+    'Platforms',
+    'Plugins',
+    'Portals',
+    'Programs',
+    'Products',
+    'Queues',
+    'Search tools',
+    'Self-hosted apps',
+    'Serverless systems',
+    'Schedulers',
+    'Storefronts',
+    'Test suites',
+    'Websites',
+    'Workbenches',
+    'Parsers',
+]);
+const ACTIVE_NOUN_INDEXES = ALL_NOUNS.flatMap((noun, index) =>
+    DISABLED_SUBJECTS.has(noun.word) ? [] : [index]
+);
+const NOUNS = ACTIVE_NOUN_INDEXES.map((index) => ALL_NOUNS[index]);
 const CONNECTORS = [
     'that',
     'can',
@@ -173,7 +234,7 @@ type HeadlineVerb = {
     objectKinds?: ObjectKind[];
 };
 
-const SUBJECT_KINDS: SubjectKind[][] = [
+const ALL_SUBJECT_KINDS: SubjectKind[][] = [
     ['software'],
     ['software', 'technical'],
     ['software'],
@@ -234,36 +295,46 @@ const SUBJECT_KINDS: SubjectKind[][] = [
     ['interface', 'technical'],
     ['ops', 'workflow'],
     ['data', 'interface'],
+    ['tool', 'workflow'],
+    ['automation', 'technical'],
+    ['software', 'technical'],
+    ['tool', 'ops'],
+    ['software', 'business'],
+    ['tool', 'workflow', 'interface'],
+    ['data', 'technical'],
+    ['data', 'workflow', 'automation'],
+    ['infra', 'automation', 'technical'],
+    ['tool', 'technical'],
+    ['software', 'technical', 'business'],
+    ['software', 'ops', 'business'],
+    ['tool', 'technical'],
+    ['automation', 'workflow', 'technical'],
+    ['software', 'interface', 'infra'],
+    ['tool', 'technical'],
 ];
+const SUBJECT_KINDS = ACTIVE_NOUN_INDEXES.map(
+    (index) => ALL_SUBJECT_KINDS[index]
+);
 
 const VERBS: HeadlineVerb[] = [
     { base: 'work', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
     { base: 'serve', links: [TO], objectKinds: ['audience', 'business'] },
-    { base: 'help', links: [TO], objectKinds: ['audience', 'business', 'workflow'] },
     { base: 'support', links: [TO], objectKinds: ['audience', 'business', 'workflow', 'technical'] },
     { base: 'empower', links: [TO], objectKinds: ['audience', 'business'] },
-    { base: 'protect', links: [TO], objectKinds: ['audience', 'business', 'technical'] },
-    { base: 'connect', links: [TO], objectKinds: ['audience', 'business', 'technical', 'workflow'] },
     { base: 'prepare', links: [FOR], objectKinds: ['audience', 'business', 'workflow', 'outcome'] },
-    { base: 'equip', past: 'equipped', links: [TO], objectKinds: ['audience', 'business'] },
-    { base: 'save', links: [TO], objectKinds: ['abstract'] },
     { base: 'simplify', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
-    { base: 'clarify', links: [TO], objectKinds: ['workflow', 'outcome', 'abstract'] },
+    { base: 'clarify', links: [TO], objectKinds: ['business', 'workflow', 'outcome', 'technical', 'abstract'] },
     { base: 'automate', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
     { base: 'debug', past: 'debugged', links: [TO], objectKinds: ['workflow', 'technical'] },
     { base: 'organize', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
-    { base: 'route', links: [TO], objectKinds: ['workflow', 'abstract'] },
-    { base: 'sync', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
     { base: 'validate', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
     { base: 'reduce', links: [TO], objectKinds: ['abstract'] },
     { base: 'trace', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
-    { base: 'monitor', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
     { base: 'measure', links: [TO], objectKinds: ['outcome', 'technical', 'abstract'] },
     { base: 'surface', links: [TO], objectKinds: ['workflow', 'technical', 'abstract'] },
-    { base: 'reconcile', links: [TO], objectKinds: ['business', 'workflow', 'technical', 'abstract'] },
     { base: 'generate', links: [TO], objectKinds: ['outcome'] },
 ];
-const OBJECTS: HeadlineObject[] = [
+const ALL_OBJECTS: HeadlineObject[] = [
     { text: 'you', kinds: ['human', 'audience'] },
     { text: 'teams', kinds: ['human', 'audience'] },
     { text: 'orgs', kinds: ['organization', 'business'] },
@@ -308,14 +379,46 @@ const OBJECTS: HeadlineObject[] = [
     { text: 'field reports', kinds: ['outcome'] },
     { text: 'workflow state', kinds: ['workflow', 'technical'] },
     { text: 'operational metrics', kinds: ['business', 'technical', 'abstract'] },
+    { text: 'business processes', kinds: ['business', 'workflow'] },
+    { text: 'execution history', kinds: ['technical', 'abstract'] },
+    { text: 'system behavior', kinds: ['technical', 'abstract'] },
+    { text: 'failure paths', kinds: ['workflow', 'technical', 'abstract'] },
+    { text: 'application state', kinds: ['workflow', 'technical', 'abstract'] },
 ];
+const DISABLED_OBJECTS = new Set([
+    'approvals',
+    'clients',
+    'creators',
+    'customers',
+    'developers',
+    'field data',
+    'founders',
+    'requests',
+    'startups',
+    'support teams',
+    'time',
+    'your customers',
+    'your pipeline',
+    'your workflow',
+    'your workflows',
+]);
+const ACTIVE_OBJECT_INDEXES = ALL_OBJECTS.flatMap((object, index) =>
+    DISABLED_OBJECTS.has(object.text) ? [] : [index]
+);
+const OBJECTS = ACTIVE_OBJECT_INDEXES.map((index) => ALL_OBJECTS[index]);
 const PUNCTS = ['.', '!'];
 
 // Emojis that fit each noun / verb / object, so a garnish is contextual rather
 // than random. Aligned by index with NOUNS, VERBS, and OBJECTS above.
-const NOUN_EMOJI = ['💻', '🖥️', '🧩', '💡', '🛠️', '📱', '⌨️', '🤖', '📊', '🔀', '🕵️', '🔧', '📜', '📦', '🧱', '🧠', '🗂️', '🔗', '🌐', '🤖', '🛎️', '🔑', '✨', '🎨', '🖱️', '🧪', '📉', '📄', '💬', '🗄️', '🏗️', '🕸️', '🔍', '🔌', '🔲', '🪝', '🚪', '🏪', '🌊', '🧰', '🏛️', '🎛️', '🤵', '🔌', '🗄️', '🖥️', '🎛️', '🧰', '🛠️', '📋', '📝', '📥', '🗓️', '📥', '🧾', '🔎', '🧰', '🖥️', '🕹️', '📈'];
-const VERB_EMOJI = ['✅', '🤝', '🤲', '🫶', '💪', '🛡️', '🔗', '🏗️', '🧰', '⏱️', '✂️', '🔍', '⚙️', '🧪', '🗂️', '🔀', '🔄', '✅', '📉', '🧭', '📡', '📏', '🔎', '🔁', '🧾'];
-const OBJ_EMOJI = ['🙌', '👥', '🏢', '💚', '🛒', '🙋', '💻', '👥', '👤', '💼', '🤝', '🚀', '🌱', '🎨', '🔀', '🛍️', '🗺️', '📦', '🚀', '🔀', '🔮', '⏱️', '✂️', '🧭', '⚙️', '🔀', '🗄️', '🧱', '🔀', '🎧', '🧪', '⏳', '⚠️', '🧩', '📡', '✅', '📬', '🗃️', '🕸️', '📣', '📋', '🧾', '🔍', '📊'];
+const ALL_NOUN_EMOJI = ['💻', '🖥️', '🧩', '💡', '🛠️', '📱', '⌨️', '🤖', '📊', '🔀', '🕵️', '🔧', '📜', '📦', '🧱', '🧠', '🗂️', '🔗', '🌐', '🤖', '🛎️', '🔑', '✨', '🎨', '🖱️', '🧪', '📉', '📄', '💬', '🗄️', '🏗️', '🕸️', '🔍', '🔌', '🔲', '🪝', '🚪', '🏪', '🌊', '🧰', '🏛️', '🎛️', '🤵', '🔌', '🗄️', '🖥️', '🎛️', '🧰', '🛠️', '📋', '📝', '📥', '🗓️', '📥', '🧾', '🔎', '🧰', '🖥️', '🕹️', '📈', '🧭', '🧾', '☁️', '🦺', '🏢', '🕸️', '🧾', '🔀', '☁️', '✅', '🧱', '⚙️', '🛠️', '🤖', '🏠', '🔬'];
+const NOUN_EMOJI = ACTIVE_NOUN_INDEXES.map(
+    (index) => ALL_NOUN_EMOJI[index]
+);
+const VERB_EMOJI = ['✅', '🤝', '🫶', '💪', '🏗️', '✂️', '🔍', '⚙️', '🧪', '🗂️', '✅', '📉', '🧭', '📏', '🔎', '🧾'];
+const ALL_OBJ_EMOJI = ['🙌', '👥', '🏢', '💚', '🛒', '🙋', '💻', '👥', '👤', '💼', '🤝', '🚀', '🌱', '🎨', '🔀', '🛍️', '🗺️', '📦', '🚀', '🔀', '🔮', '⏱️', '✂️', '🧭', '⚙️', '🔀', '🗄️', '🧱', '🔀', '🎧', '🧪', '⏳', '⚠️', '🧩', '📡', '✅', '📬', '🗃️', '🕸️', '📣', '📋', '🧾', '🔍', '📊', '⚙️', '🧾', '🔍', '⚠️', '🔎'];
+const OBJ_EMOJI = ACTIVE_OBJECT_INDEXES.map(
+    (index) => ALL_OBJ_EMOJI[index]
+);
 const EXTRA_EMOJI = ['✨', '💡', '⭐', '🔥'];
 
 const objectText = (idx: number) => OBJECTS[idx].text;
@@ -333,7 +436,6 @@ const HUMAN_DIRECTED_RISK_VERBS = new Set([
     'reconcile',
     'reduce',
     'review',
-    'route',
     'sync',
     'trace',
     'validate',
@@ -379,6 +481,11 @@ const HUMAN_JUDGMENT_SUPPORT_VERBS = new Set([
     'serve',
     'support',
     'surface',
+]);
+const SIMPLIFY_OBJECTS = new Set([
+    'busywork',
+    'complex workflows',
+    'handoffs',
 ]);
 const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
     approvals: new Set([
@@ -446,6 +553,39 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
         'monitor',
         'surface',
     ]),
+    'business processes': new Set([
+        'automate',
+        'clarify',
+        'organize',
+        'simplify',
+        'support',
+    ]),
+    'execution history': new Set([
+        'clarify',
+        'surface',
+    ]),
+    'system behavior': new Set([
+        'clarify',
+        'monitor',
+        'surface',
+        'trace',
+        'validate',
+    ]),
+    'failure paths': new Set([
+        'clarify',
+        'debug',
+        'monitor',
+        'surface',
+        'trace',
+        'validate',
+    ]),
+    'application state': new Set([
+        'clarify',
+        'monitor',
+        'surface',
+        'trace',
+        'validate',
+    ]),
     patterns: new Set([
         'clarify',
         'measure',
@@ -457,6 +597,7 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
     ]),
     'complex workflows': new Set([
         'clarify',
+        'simplify',
     ]),
     'your launch': new Set([
         'clarify',
@@ -564,6 +705,7 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
         'route',
         'simplify',
         'surface',
+        'sync',
         'trace',
         'validate',
     ]),
@@ -571,6 +713,7 @@ const OBJECT_VERB_ALLOWLIST: Record<string, Set<string>> = {
 const verbAllowsObject = (verbIdx: number, objIdx: number) => {
     const base = VERBS[verbIdx].base;
     const text = objectText(objIdx);
+    if (base === 'simplify' && !SIMPLIFY_OBJECTS.has(text)) return false;
     if (humanObject(objIdx)) {
         if (HUMAN_DIRECTED_RISK_VERBS.has(base)) return false;
         if (!HUMAN_SERVANT_VERBS.has(base)) return false;
@@ -605,14 +748,6 @@ const domainForNoun = (nounIdx: number): HeadlineDomain => {
 };
 const STATIC_PHRASE_PROMPTS = [
     {
-        line1: 'Less busywork.',
-        line2: 'More time for your team.',
-    },
-    {
-        line1: 'From scattered handoffs',
-        line2: 'to calmer operations.',
-    },
-    {
         line1: 'What could your workflow',
         line2: 'stop making you do manually?',
     },
@@ -629,14 +764,6 @@ const STATIC_PHRASE_PROMPTS = [
         line2: 'into searchable context.',
     },
     {
-        line1: 'Internal tools',
-        line2: 'that give time back.',
-    },
-    {
-        line1: 'Dashboards',
-        line2: 'that clarify the next step.',
-    },
-    {
         line1: 'Turn field data',
         line2: 'into reports crews can use.',
     },
@@ -648,14 +775,170 @@ const STATIC_PHRASE_PROMPTS = [
         line1: 'Operational metrics',
         line2: 'made visible in real time.',
     },
+    {
+        line1: 'What still takes your team',
+        line2: 'too many manual steps?',
+    },
+    {
+        line1: 'Can your team see',
+        line2: 'why a workflow failed?',
+    },
+    {
+        line1: 'Agent systems',
+        line2: 'with people in control.',
+    },
+    {
+        line1: 'From operating procedure',
+        line2: 'to maintained software.',
+    },
+    {
+        line1: 'Build around the work',
+        line2: 'your team actually does.',
+    },
+    {
+        line1: 'What should your software',
+        line2: 'make easier to inspect?',
+    },
+    {
+        line1: 'Could one application',
+        line2: 'replace scattered steps?',
+    },
+    {
+        line1: 'Can you trace a failure',
+        line2: 'from interface to system?',
+    },
+    {
+        line1: 'Who stays in control',
+        line2: 'when agents do the work?',
+    },
+    {
+        line1: 'Readable workflows.',
+        line2: 'Inspectable execution.',
+    },
+    {
+        line1: 'Built to run.',
+        line2: 'Tested when things fail.',
+    },
+    {
+        line1: 'What happens after',
+        line2: 'the happy path fails?',
+    },
+    {
+        line1: 'From failure signal',
+        line2: 'to reproducible cause.',
+    },
+    {
+        line1: 'AI work should leave',
+        line2: 'evidence people can inspect.',
+    },
+    {
+        line1: 'Could your internal software',
+        line2: 'fit the process you have?',
+    },
+    {
+        line1: 'One owner, end to end.',
+        line2: 'Interface through deployment.',
+    },
+    {
+        line1: 'Could your workflow show',
+        line2: 'where every value came from?',
+    },
+    {
+        line1: 'Can the system fail',
+        line2: 'without becoming a mystery?',
+    },
+    {
+        line1: 'Agents can propose.',
+        line2: 'People authorize.',
+    },
+    {
+        line1: 'Every automated action',
+        line2: 'should leave evidence.',
+    },
+    {
+        line1: 'Software should fit the work.',
+        line2: 'Not the other way around.',
+    },
+    {
+        line1: 'What does your team learn',
+        line2: 'only after something breaks?',
+    },
+    {
+        line1: 'From field input',
+        line2: 'to a report ready on-site.',
+    },
+    {
+        line1: 'Can your application run',
+        line2: 'without one vendor?',
+    },
+    {
+        line1: 'Trace the value.',
+        line2: 'Understand the workflow.',
+    },
+    {
+        line1: 'What should be automated?',
+        line2: 'What still needs a person?',
+    },
+    {
+        line1: 'When an integration fails,',
+        line2: 'what should keep working?',
+    },
+    {
+        line1: 'Repeatable releases.',
+        line2: 'Explicit deployment steps.',
+    },
+    {
+        line1: 'From workflow discovery',
+        line2: 'to the next maintained release.',
+    },
+    {
+        line1: 'Build the narrow tool.',
+        line2: 'Solve the actual problem.',
+    },
+    {
+        line1: 'Plan the fallback.',
+        line2: 'Failure paths are product work.',
+    },
+    {
+        line1: 'Could one data model',
+        line2: 'replace duplicate entry?',
+    },
+    {
+        line1: 'Where does context disappear',
+        line2: 'between systems?',
+    },
+    {
+        line1: 'What changes after launch?',
+        line2: 'The software should too.',
+    },
+    {
+        line1: 'Automate the repeatable.',
+        line2: 'Keep judgment with people.',
+    },
+    {
+        line1: 'Constraints first.',
+        line2: 'Then the simplest useful product.',
+    },
 ] as const;
 type Quality = HeadlineQuality;
-type SubjectCapability = { verbs: string[]; objects: string[]; quality: Quality };
+type SubjectCapability = {
+    verbs: string[];
+    objects: string[];
+    quality: Quality;
+    editorial: 'informative' | 'inherent';
+    constructions: Array<'statement' | 'question' | 'stance'>;
+};
 const capability = (
     verbs: string[],
     objects: string[],
-    quality: Quality = 'strong'
-): SubjectCapability => ({ verbs, objects, quality });
+    quality: Quality = 'strong',
+    editorial: SubjectCapability['editorial'] = 'informative',
+    constructions: SubjectCapability['constructions'] = ['statement', 'question']
+): SubjectCapability => ({ verbs, objects, quality, editorial, constructions });
+const inherentCapability = (verbs: string[], objects: string[]) =>
+    capability(verbs, objects, 'supporting', 'inherent');
+const stanceCapability = (verbs: string[], objects: string[]) =>
+    capability(verbs, objects, 'strong', 'informative', ['stance']);
 const ROLE_MANIFEST = compileHeadlineManifest({
     subjects: [
         {
@@ -668,7 +951,7 @@ const ROLE_MANIFEST = compileHeadlineManifest({
         },
         {
             id: 'Forms',
-            capabilities: ['organize-input', 'route-governance', 'validate-data'],
+            capabilities: ['organize-input', 'validate-data'],
         },
         {
             id: 'Search tools',
@@ -684,7 +967,6 @@ const ROLE_MANIFEST = compileHeadlineManifest({
         { id: 'measure', capability: 'monitor-operations', objectRoles: ['operations', 'decision-support'] },
         { id: 'monitor', capability: 'monitor-operations', objectRoles: ['operations', 'decision-support'] },
         { id: 'organize', capability: 'organize-input', objectRoles: ['workflow', 'data'] },
-        { id: 'route', capability: 'route-governance', objectRoles: ['workflow'] },
         { id: 'validate', capability: 'validate-data', objectRoles: ['data'] },
         { id: 'organize', capability: 'organize-information', objectRoles: ['information'] },
         { id: 'clarify', capability: 'reveal-information', objectRoles: ['information'] },
@@ -719,93 +1001,80 @@ const inheritedCapabilities = (subject: string): SubjectCapability[] => {
 // Capabilities bind actions to their compatible outcomes. A subject can have
 // several capabilities without gaining the Cartesian product between them.
 const SUBJECT_CAPABILITIES: Record<string, SubjectCapability[]> = {
-    Software: [capability(['serve', 'support', 'work'], ['you', 'teams', 'orgs', 'users', 'your business', 'your team', 'your users']), capability(['simplify'], ['busywork', 'operations', 'your workflow']), capability(['empower'], ['teams', 'your team'])],
-    Systems: [capability(['serve', 'support', 'work'], ['teams', 'your business', 'your team']), capability(['support'], ['your pipeline']), capability(['connect'], ['your product', 'your stack']), capability(['organize', 'simplify'], ['operations', 'your workflow'])],
-    Programs: [capability(['help', 'serve', 'support', 'work'], ['people', 'teams', 'users', 'your team', 'your users'])],
-    Ideas: [capability(['clarify', 'prepare'], ['your launch', 'your next step', 'your roadmap'])],
-    Tools: [capability(['help', 'support', 'work'], ['developers', 'teams', 'users', 'your team', 'your users']), capability(['simplify'], ['busywork', 'your workflow']), capability(['generate'], ['field reports']), capability(['empower'], ['developers', 'teams', 'your team'])],
-    Apps: [capability(['help', 'serve', 'support', 'work'], ['customers', 'people', 'users', 'your customers', 'your users']), capability(['simplify'], ['your workflow']), capability(['organize'], ['field data']), capability(['generate'], ['field reports'])],
-    Code: [capability(['support'], ['your product', 'your stack']), capability(['simplify'], ['your workflow']), capability(['protect'], ['your data'])],
-    Automation: [capability(['automate', 'reduce', 'simplify'], ['busywork', 'handoffs', 'your workflow']), capability(['organize'], ['operations', 'requests']), capability(['save'], ['time'])],
-    Data: [capability(['clarify', 'surface'], ['decision context', 'patterns', 'signals'])],
-    Workflows: [capability(['clarify', 'organize', 'simplify'], ['handoffs', 'operations', 'your workflow']), capability(['reduce'], ['busywork'])],
-    Agents: [capability(['help', 'support'], ['developers', 'support teams', 'users', 'your users']), capability(['organize'], ['requests'])],
-    Scripts: [capability(['automate', 'simplify'], ['busywork', 'your workflow']), capability(['organize', 'validate'], ['records', 'your data'])],
-    Platforms: [capability(['serve', 'support'], ['customers', 'teams', 'users', 'your business', 'your customers', 'your users']), capability(['connect'], ['your product', 'your stack'])],
-    Models: [capability(['help', 'support', 'work'], ['developers', 'users', 'your team', 'your users']), capability(['clarify', 'surface'], ['patterns', 'signals', 'your data'])],
-    Integrations: [capability(['connect', 'sync'], ['your data', 'your product', 'your stack', 'your workflows']), capability(['simplify'], ['handoffs', 'your workflow'])],
-    Services: [capability(['serve', 'support'], ['clients', 'customers', 'teams', 'your business', 'your customers', 'your team', 'your users'], 'supporting')],
-    Solutions: [capability(['clarify', 'support'], ['operations', 'startups', 'your business', 'your product', 'your workflow']), capability(['simplify'], ['busywork', 'handoffs'])],
-    Experiences: [capability(['help', 'serve'], ['customers', 'people', 'users', 'your customers', 'your users'], 'exploratory')],
-    Interfaces: [capability(['clarify', 'simplify'], ['operations', 'requests', 'your workflow']), capability(['clarify'], ['complex workflows', 'workflow state']), capability(['serve', 'support'], ['customers', 'users', 'your users'])],
-    Prototypes: [capability(['clarify', 'prepare'], ['your launch', 'your next step', 'your product'])],
-    Analytics: [capability(['clarify', 'surface'], ['decision context', 'operational metrics', 'patterns', 'signals']), capability(['measure'], ['operational metrics', 'signals', 'your business', 'your data'])],
-    Infrastructure: [capability(['protect', 'support'], ['your data', 'your product', 'your stack']), capability(['monitor'], ['operations', 'signals'])],
-    Networks: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['monitor', 'trace'], ['signals'])],
-    Insights: [capability(['clarify', 'support'], ['decision context', 'your business', 'your next step']), capability(['surface'], ['patterns', 'signals'])],
-    Tech: [capability(['serve', 'support', 'work'], ['people', 'teams', 'your business', 'your team']), capability(['empower'], ['people', 'teams', 'your team'])],
-    APIs: inheritedCapabilities('APIs'),
-    Backends: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['organize'], ['operations', 'requests']), capability(['sync', 'validate'], ['records', 'your data'])],
-    Bots: [capability(['help', 'support'], ['customers', 'support teams', 'users', 'your customers', 'your users'])],
-    Chatbots: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['support'], ['support teams', 'requests'])],
-    Dashboards: [...inheritedCapabilities('Dashboards'), capability(['measure', 'surface'], ['operational metrics']), capability(['clarify', 'surface'], ['workflow state']), capability(['surface'], ['real-time updates'])],
-    Databases: [capability(['organize', 'protect', 'reconcile', 'sync', 'validate'], ['records', 'your data'])],
-    Devtools: [capability(['clarify', 'debug', 'monitor', 'trace', 'validate'], ['edge cases', 'errors', 'your stack'])],
-    Features: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['support'], ['your product'])],
-    Flows: [capability(['clarify', 'organize', 'simplify'], ['handoffs', 'operations', 'your workflow']), capability(['reduce'], ['busywork'])],
-    Forms: [...inheritedCapabilities('Forms'), capability(['organize'], ['field data'])],
-    'Internal tools': [capability(['automate', 'reduce', 'simplify'], ['busywork', 'handoffs', 'your workflow']), capability(['clarify'], ['complex workflows', 'operations', 'requests', 'workflow state']), capability(['organize'], ['field data', 'operations', 'requests']), capability(['surface'], ['real-time updates', 'workflow state']), capability(['generate'], ['field reports']), capability(['support'], ['teams', 'your team']), capability(['save'], ['time'])],
-    Modules: [capability(['connect', 'support'], ['your product', 'your stack']), capability(['clarify'], ['decision context'])],
-    Pipelines: [capability(['automate', 'organize', 'route'], ['handoffs', 'your workflows']), capability(['sync', 'validate'], ['your data'])],
-    Portals: [capability(['serve', 'support'], ['customers', 'support teams', 'your customers', 'your users']), capability(['clarify', 'organize'], ['records', 'requests'])],
-    Products: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your business', 'your customers', 'your users'])],
-    Reports: [capability(['clarify', 'surface'], ['decision context', 'operational metrics', 'patterns', 'signals']), capability(['clarify', 'organize'], ['field data']), capability(['measure'], ['operational metrics', 'signals'])],
-    Schedulers: [capability(['organize'], ['operations', 'your workflows']), capability(['simplify'], ['your workflows'])],
-    Queues: [capability(['organize', 'route'], ['handoffs', 'requests'])],
-    'Search tools': inheritedCapabilities('Search tools'),
-    Parsers: [capability(['clarify', 'organize', 'surface'], ['records']), capability(['sync', 'validate'], ['records', 'your data'])],
-    Importers: [capability(['organize', 'sync', 'validate'], ['records', 'your data'])],
-    Plugins: [capability(['connect', 'support'], ['your product', 'your stack'])],
-    Websites: [capability(['help', 'serve', 'support'], ['customers', 'users', 'your business', 'your customers', 'your users'])],
-    Widgets: [capability(['clarify', 'surface'], ['decision context', 'signals']), capability(['support'], ['your product'])],
-    Workbenches: [capability(['clarify', 'organize'], ['decision context', 'operations', 'records', 'your data']), capability(['support'], ['your stack'])],
-    Consoles: [capability(['clarify', 'debug', 'monitor', 'surface', 'trace'], ['errors', 'operations', 'signals', 'your stack']), capability(['clarify', 'surface'], ['workflow state'])],
-    Toolkits: [capability(['help', 'support'], ['developers', 'teams', 'your team']), capability(['simplify'], ['your workflow']), capability(['equip'], ['creators', 'developers', 'founders', 'teams'])],
-    Frameworks: [capability(['support'], ['developers', 'your product', 'your stack']), capability(['organize', 'simplify'], ['your workflow'])],
-    Assistants: [capability(['help', 'support', 'work'], ['people', 'teams', 'users', 'your team', 'your users']), capability(['organize'], ['requests'])],
-    Frontends: [capability(['serve', 'support'], ['customers', 'users', 'your customers', 'your users']), capability(['connect'], ['your product'])],
-    UIs: [capability(['clarify', 'simplify'], ['operations', 'requests', 'your workflow']), capability(['clarify'], ['complex workflows', 'workflow state']), capability(['serve', 'support'], ['customers', 'users', 'your users'])],
-    'Admin panels': [capability(['clarify', 'organize', 'support'], ['operations', 'records', 'requests', 'support teams']), capability(['simplify'], ['your workflow'])],
-    Storefronts: [capability(['serve', 'support'], ['customers', 'your business', 'your customers'])],
-    'Command centers': [capability(['clarify', 'monitor', 'surface'], ['operations', 'signals', 'workflow state']), capability(['surface'], ['real-time updates']), capability(['support'], ['decision context', 'support teams'])],
-    Visualizations: [capability(['clarify'], ['complex workflows', 'operational metrics', 'patterns', 'workflow state']), capability(['surface'], ['operational metrics', 'patterns', 'workflow state'])],
+    Software: [stanceCapability(['serve', 'support', 'work'], ['you', 'teams', 'orgs', 'your business', 'your team']), capability(['simplify'], ['busywork']), capability(['empower'], ['teams', 'your team'], 'exploratory', 'informative', ['question', 'stance'])],
+    Systems: [stanceCapability(['serve', 'support', 'work'], ['teams', 'your business', 'your team'])],
+    Ideas: [capability(['clarify'], ['your next step', 'your roadmap'])],
+    Tools: [capability(['simplify'], ['busywork']), inherentCapability(['support', 'work'], ['teams', 'your team']), inherentCapability(['empower'], ['teams', 'your team'])],
+    Automation: [capability(['reduce', 'simplify'], ['busywork', 'handoffs']), inherentCapability(['automate'], ['busywork', 'handoffs'])],
+    Workflows: [capability(['clarify'], ['handoffs']), capability(['organize', 'simplify'], ['handoffs']), capability(['reduce'], ['busywork'])],
+    Scripts: [capability(['automate'], ['busywork']), capability(['validate'], ['records', 'your data'])],
+    Models: [capability(['work'], ['users', 'your team', 'your users']), capability(['clarify', 'surface'], ['patterns', 'signals'])],
+    Integrations: [capability(['simplify'], ['handoffs'])],
+    Services: [capability(['prepare'], ['your launch'])],
+    Solutions: [capability(['simplify'], ['complex workflows'])],
+    Experiences: [capability(['simplify'], ['complex workflows'])],
+    Interfaces: [capability(['simplify'], ['complex workflows']), capability(['clarify'], ['workflow state'])],
+    Prototypes: [capability(['clarify'], ['your next step', 'your product']), capability(['prepare'], ['your launch'])],
+    Analytics: [capability(['clarify', 'surface'], ['bottlenecks', 'decision context', 'operational metrics', 'patterns', 'signals']), capability(['measure'], ['operational metrics', 'signals'])],
+    Insights: [capability(['clarify'], ['decision context', 'your next step']), capability(['surface'], ['patterns', 'signals'])],
+    Tech: [stanceCapability(['serve'], ['people', 'teams', 'your team']), capability(['empower'], ['people', 'teams', 'your team'], 'exploratory', 'informative', ['question', 'stance'])],
+    Dashboards: [capability(['clarify'], ['workflow state']), inherentCapability(['surface'], ['operational metrics', 'real-time updates', 'workflow state'])],
+    Flows: [capability(['clarify'], ['handoffs']), capability(['organize', 'simplify'], ['handoffs']), capability(['reduce'], ['busywork'])],
+    'Internal tools': [capability(['automate', 'reduce', 'simplify'], ['busywork', 'handoffs']), capability(['clarify'], ['complex workflows', 'operations', 'workflow state']), capability(['surface'], ['real-time updates', 'workflow state'])],
+    Reports: [capability(['clarify'], ['decision context', 'operational metrics']), inherentCapability(['surface'], ['operational metrics', 'patterns', 'signals'])],
+    Widgets: [capability(['clarify'], ['workflow state']), inherentCapability(['surface'], ['signals'])],
+    Toolkits: [capability(['simplify'], ['complex workflows'], 'exploratory')],
+    Frameworks: [capability(['simplify'], ['complex workflows'], 'exploratory')],
+    Assistants: [stanceCapability(['work'], ['people', 'teams', 'your team']), capability(['clarify'], ['your next step'])],
+    Frontends: [capability(['simplify'], ['complex workflows'])],
+    UIs: [capability(['simplify'], ['complex workflows']), capability(['clarify'], ['workflow state'])],
+    Visualizations: [capability(['clarify'], ['complex workflows', 'operational metrics', 'patterns', 'workflow state']), inherentCapability(['surface'], ['operational metrics', 'patterns', 'workflow state'])],
+    'Workflow tools': [capability(['clarify'], ['business processes', 'complex workflows', 'workflow state']), capability(['trace'], ['errors', 'system behavior'])],
+    'Agent systems': [capability(['clarify', 'surface'], ['execution history', 'system behavior'])],
+    'Field tools': [capability(['generate'], ['field reports']), inherentCapability(['organize'], ['records'])],
+    'Business applications': [capability(['simplify'], ['busywork']), inherentCapability(['organize'], ['operations', 'records'])],
+    'Workflow visualizers': [capability(['clarify'], ['business processes', 'complex workflows', 'system behavior']), capability(['surface'], ['system behavior']), capability(['trace'], ['errors', 'system behavior']), inherentCapability(['clarify', 'surface'], ['workflow state'])],
+    'Audit trails': [capability(['clarify', 'surface'], ['system behavior']), inherentCapability(['clarify', 'surface'], ['execution history'])],
+    'Operational software': [capability(['simplify'], ['busywork']), inherentCapability(['organize'], ['business processes', 'operations', 'records'])],
+    'Developer tools': [capability(['clarify', 'trace'], ['application state', 'failure paths', 'system behavior', 'your stack']), capability(['debug'], ['edge cases', 'your stack']), capability(['surface'], ['application state', 'workflow state']), inherentCapability(['debug', 'surface'], ['errors'])],
+    'AI workflows': [capability(['clarify', 'surface'], ['execution history', 'failure paths', 'system behavior'])],
+    'Diagnostic tools': [capability(['clarify'], ['application state', 'failure paths', 'signals', 'system behavior']), capability(['trace'], ['application state', 'failure paths', 'system behavior']), capability(['surface'], ['application state', 'signals']), inherentCapability(['surface', 'trace'], ['errors'])],
 };
 const subjectAllowsTriple = (nounIdx: number, verbIdx: number, objIdx: number) => {
     const capabilities = SUBJECT_CAPABILITIES[NOUNS[nounIdx].word];
     if (!capabilities) return true;
     return capabilities.some(
-        ({ verbs, objects }) =>
+        ({ verbs, objects, editorial }) =>
+            editorial === 'informative' &&
             verbs.includes(VERBS[verbIdx].base) && objects.includes(objectText(objIdx))
     );
 };
+const capabilityAllowsConstruction = (
+    nounIdx: number,
+    verbIdx: number,
+    objIdx: number,
+    construction: SubjectCapability['constructions'][number]
+) =>
+    (SUBJECT_CAPABILITIES[NOUNS[nounIdx].word] ?? []).some(
+        ({ verbs, objects, editorial, constructions }) =>
+            editorial === 'informative' &&
+            constructions.includes(construction) &&
+            verbs.includes(VERBS[verbIdx].base) &&
+            objects.includes(objectText(objIdx))
+    );
 const tripleKey = (noun: string, verb: string, object: string) =>
     `${noun}\u0000${verb}\u0000${object}`;
 // Exact overrides handle combinations whose portfolio value differs from the
 // rest of an otherwise coherent capability group.
-const TRIPLE_QUALITY_OVERRIDES: Record<string, Quality> = {
-    [tripleKey('Products', 'serve', 'users')]: 'supporting',
-    [tripleKey('Products', 'serve', 'your users')]: 'supporting',
-    [tripleKey('Solutions', 'support', 'startups')]: 'supporting',
-    [tripleKey('Features', 'help', 'users')]: 'supporting',
-    [tripleKey('Features', 'help', 'your users')]: 'supporting',
-};
+const TRIPLE_QUALITY_OVERRIDES: Record<string, Quality> = {};
 const qualityForTriple = (nounIdx: number, verbIdx: number, objIdx: number): Quality => {
     const override = TRIPLE_QUALITY_OVERRIDES[
         tripleKey(NOUNS[nounIdx].word, VERBS[verbIdx].base, objectText(objIdx))
     ];
     if (override) return override;
     const matches = (SUBJECT_CAPABILITIES[NOUNS[nounIdx].word] ?? []).filter(
-        ({ verbs, objects }) =>
+        ({ verbs, objects, editorial }) =>
+            editorial === 'informative' &&
             verbs.includes(VERBS[verbIdx].base) && objects.includes(objectText(objIdx))
     );
     if (matches.some(({ quality }) => quality === 'strong')) return 'strong';
@@ -1018,9 +1287,20 @@ const TRIPLES_BY_NOUN = indexTriples('nounIdx');
 const TRIPLES_BY_VERB = indexTriples('verbIdx');
 const TRIPLES_BY_OBJECT = indexTriples('objIdx');
 const statementEligible = (triple: HeadlineTriple) =>
-    triple.quality !== 'exploratory';
+    triple.quality !== 'exploratory' &&
+    capabilityAllowsConstruction(
+        triple.nounIdx,
+        triple.verbIdx,
+        triple.objIdx,
+        'statement'
+    );
 const questionEligible = (triple: HeadlineTriple, modalIdx: number) =>
-    modalText(modalIdx).startsWith('How ') || triple.quality !== 'exploratory';
+    capabilityAllowsConstruction(
+        triple.nounIdx,
+        triple.verbIdx,
+        triple.objIdx,
+        'question'
+    ) && (modalText(modalIdx).startsWith('How ') || triple.quality !== 'exploratory');
 const STATEMENT_POOL = VALID_TRIPLES.flatMap((triple) =>
     statementEligible(triple)
         ? Array.from({ length: QUALITY_WEIGHT[triple.quality] }, () => triple)
@@ -1052,6 +1332,12 @@ const STANCE_VERBS = new Set([
 const STANCE_PROMPTS = VALID_TRIPLES.filter(
     (triple) =>
         triple.quality === 'strong' &&
+        capabilityAllowsConstruction(
+            triple.nounIdx,
+            triple.verbIdx,
+            triple.objIdx,
+            'stance'
+        ) &&
         STANCE_VERBS.has(VERBS[triple.verbIdx].base) &&
         (humanObject(triple.objIdx) || organizationObject(triple.objIdx))
 ).map((triple) =>
@@ -1226,6 +1512,19 @@ export const getHeadlineTripleQuality = (
         ? qualityForTriple(nounIdx, verbIdx, objIdx)
         : null;
 };
+export const isHeadlineTripleEligibleFor = (
+    noun: string,
+    verb: string,
+    object: string,
+    construction: SubjectCapability['constructions'][number]
+) => {
+    const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
+    const verbIdx = VERBS.findIndex(({ base }) => base === verb);
+    const objIdx = OBJECTS.findIndex(({ text }) => text === object);
+    return nounIdx >= 0 && verbIdx >= 0 && objIdx >= 0
+        ? capabilityAllowsConstruction(nounIdx, verbIdx, objIdx, construction)
+        : false;
+};
 export const getHeadlineFormatSlots = (
     mode: 'stmt' | 'q',
     line1: string,
@@ -1303,8 +1602,8 @@ export const auditHeadlineGrammar = () => {
         deadCapabilities: Object.entries(SUBJECT_CAPABILITIES).flatMap(
             ([noun, capabilities]) => {
                 const nounIdx = NOUNS.findIndex(({ word }) => word === noun);
-                return capabilities.flatMap(({ verbs, objects }, capabilityIdx) =>
-                    combinations.some(
+                return capabilities.flatMap(({ verbs, objects, editorial }, capabilityIdx) =>
+                    editorial === 'inherent' || combinations.some(
                         (triple) =>
                             triple.nounIdx === nounIdx &&
                             verbs.includes(VERBS[triple.verbIdx].base) &&
@@ -1320,7 +1619,12 @@ export const auditHeadlineGrammar = () => {
                 `${NOUNS[nounIdx].word} | ${VERBS[verbIdx].base} | ${objectText(objIdx)}`
         ),
         questionUnreachableNouns: NOUNS.filter(
-            (_, nounIdx) => !(TRIPLES_BY_NOUN.get(nounIdx)?.length)
+            (_, nounIdx) =>
+                !VALID_TRIPLES.some(
+                    (triple) =>
+                        triple.nounIdx === nounIdx &&
+                        MODALS.some((_, modalIdx) => questionEligible(triple, modalIdx))
+                )
         ).map(({ word }) => word),
         statementUnreachableNouns: NOUNS.filter(
             (_, nounIdx) =>
@@ -1346,6 +1650,9 @@ export const auditHeadlineGrammar = () => {
             }),
             { strong: 0, exploratory: 0, supporting: 0 }
         ),
+        suppressedInherentCapabilityCount: Object.values(SUBJECT_CAPABILITIES)
+            .flat()
+            .filter(({ editorial }) => editorial === 'inherent').length,
         questionLeadCount: MODALS.length,
         phrasePromptCount: PHRASE_PROMPTS.length,
         stancePromptCount: STANCE_PROMPTS.length,
@@ -1372,7 +1679,7 @@ export const auditHeadlineGrammar = () => {
 
 const HOLD_MS = 2600; // pause on a finished sentence
 const GAP_MS = 500; // pause on an empty word before retyping
-export const HEADLINE_FIT_SAFETY_PX = 12; // caret and emphasis overhang
+export const HEADLINE_FIT_SAFETY_PX = 20; // emoji fallback, caret, and emphasis overhang
 const TYPO_CHANCE = 0.025; // occasional adjacent-key slip, corrected visibly
 const LATE_TYPO_CHANCE = 0.07; // rarer mistake noticed after finishing a word
 
@@ -1744,7 +2051,10 @@ const TypewriterHeadline = () => {
                 text,
                 fmtAffinity?.line === line ? fmtAffinity : null
             );
-            const [start, end] = transformed.range;
+            const [start, end] = expandRangeToWordBoundaries(
+                line === 1 ? l1 : l2,
+                transformed.range
+            );
             fmtAffinity = transformed.affinity
                 ? { ...transformed.affinity, line }
                 : null;
@@ -1759,7 +2069,10 @@ const TypewriterHeadline = () => {
                 [a, b],
                 fmtAffinity?.line === line ? fmtAffinity : null
             );
-            const [start, end] = transformed.range;
+            const [start, end] = expandRangeToWordBoundaries(
+                line === 1 ? l1 : l2,
+                transformed.range
+            );
             fmtAffinity = transformed.affinity
                 ? { ...transformed.affinity, line }
                 : null;

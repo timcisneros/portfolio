@@ -17,6 +17,7 @@ struct Scene {
 
 struct Instance {
   rect : vec4f,         // device pixel x, y, width, height
+  objectRect : vec4f,   // unexpanded CSS box; rect above is overflow only
   color : vec4f,        // rgb sRGB, opacity
   shape : vec4f,        // width units, roughness, ambient, visible
   legendRect : vec4f,
@@ -66,44 +67,72 @@ fn superRadius(p : vec2f, halfSize : vec2f, exponent : f32) -> f32 {
   return pow(pow(q.x, exponent) + pow(q.y, exponent), 1.0 / exponent);
 }
 
-fn faceRadius(p : vec2f, widthUnits : f32) -> f32 {
-  let halfSize = vec2f(${K.faceHalf} * widthUnits, ${K.faceHalf});
-  // The molded face is a squircle, not an ellipse.  Its level sets become
-  // progressively rounder toward the centre, matching the broad shallow dish
-  // rather than producing a circular dimple or diagonal faceting.
+fn extendedRadius(p : vec2f, halfSize : vec2f, extension : f32, exponent : f32) -> f32 {
+  let delta = abs(p.x) - extension;
+  let localX = 0.5 * (delta + sqrt(delta * delta + ${K.contourBlend} * ${K.contourBlend}));
+  let local = vec2f(localX, p.y);
+  return superRadius(local, halfSize, exponent);
+}
+
+fn faceHalfWidth(widthUnits : f32) -> f32 {
+  return select(
+    ${K.faceHalf} * widthUnits,
+    ${K.faceHalf} + ${K.baseHalf} * (widthUnits - 1.0),
+    widthUnits > 1.0
+  );
+}
+
+fn faceBoundaryRadius(p : vec2f, widthUnits : f32) -> f32 {
+  let core = ${K.faceHalf} * min(widthUnits, 1.0);
+  let extension = ${K.baseHalf} * max(widthUnits - 1.0, 0.0);
+  return extendedRadius(p, vec2f(core, ${K.faceHalf}), extension, ${K.faceExponentEdge});
+}
+
+fn dishRadius(p : vec2f, widthUnits : f32) -> f32 {
+  let faceHalfX = faceHalfWidth(widthUnits);
+  let halfSize = vec2f(faceHalfX, ${K.faceHalf});
   let first = superRadius(p, halfSize, ${K.faceExponentEdge});
   let exponent = mix(${K.faceExponentCenter}, ${K.faceExponentEdge}, smoothstep(0.08, 0.82, first));
   return superRadius(p, halfSize, exponent);
 }
 
 fn faceHeight(p : vec2f, widthUnits : f32) -> f32 {
-  let r = clamp(faceRadius(p, widthUnits), 0.0, 1.12);
-  // Air-style keycaps have a broad, extremely smooth dish.  The depression
-  // reaches the complete face boundary; it is not a radial highlight painted
-  // over a flat top.  Zero first derivative at both centre and edge prevents
-  // a visible inner ring.
+  let r = clamp(dishRadius(p, widthUnits), 0.0, 1.12);
+  // A normalized spherical-squircle cap supplies real continuous curvature
+  // from the center to the complete face boundary. It is geometry, not a
+  // radial color wash, and stays valid for long CSS-sized keys.
   let t = clamp(r, 0.0, 1.0);
-  let broad = t * t * (3.0 - 2.0 * t);
+  let q = ${K.dishCurvature};
+  let broad = (1.0 - sqrt(max(1.0 - q * t * t, 0.0)))
+    / (1.0 - sqrt(1.0 - q));
   let dishHeight = mix(${K.faceCenterHeight}, ${K.faceEdgeHeight}, broad);
   // The four molded corners sit fractionally high without becoming a lip.
-  let corner = pow(abs(p.x) / max(${K.faceHalf} * widthUnits, 0.001), 8.0)
+  let faceHalfX = faceHalfWidth(widthUnits);
+  let corner = pow(abs(p.x) / max(faceHalfX, 0.001), 8.0)
     * pow(abs(p.y) / ${K.faceHalf}, 8.0);
   return dishHeight + ${K.cornerLift} * corner;
 }
 
+fn wallHalfAt(z : f32) -> f32 {
+  let u = clamp(z / ${K.faceEdgeHeight}, 0.0, 1.0);
+  if (u <= ${K.shoulderHeightRatio}) {
+    return mix(${K.baseHalf}, ${K.shoulderHalf}, u / ${K.shoulderHeightRatio});
+  }
+  let shoulderU = (u - ${K.shoulderHeightRatio}) / (1.0 - ${K.shoulderHeightRatio});
+  return mix(${K.shoulderHalf}, ${K.faceHalf}, smoothstep(0.0, 1.0, shoulderU));
+}
+
 fn keyField(p : vec3f, widthUnits : f32) -> f32 {
   let zRatio = clamp(p.z / ${K.faceEdgeHeight}, 0.0, 1.0);
-  let baseHalf = vec2f(${K.baseHalf} * widthUnits, ${K.baseHalf});
-  let topHalf = vec2f(${K.faceHalf} * widthUnits, ${K.faceHalf});
-  // A low-profile key is still a tapered shell.  Keeping the shoulder nearly
-  // linear and tightening only at the two molded radii prevents the squeezed
-  // pillow silhouette of the previous field.
-  let wallT = smoothstep(${K.wallBlendStart}, ${K.wallBlendEnd}, p.z);
-  let halfSize = mix(baseHalf, topHalf, wallT);
+  let widthCore = min(widthUnits, 1.0);
+  let widthExtension = max(widthUnits - 1.0, 0.0);
+  let wallHalf = wallHalfAt(p.z);
+  let halfSize = vec2f(wallHalf * widthCore, wallHalf);
+  let horizontalExtension = ${K.baseHalf} * widthExtension;
   // The base is a tighter rounded rectangle; the face is the more pronounced
   // squircle visible in the reference caps.
   let exponent = mix(${K.baseExponent}, ${K.faceExponentEdge}, smoothstep(${K.wallExponentStart}, ${K.wallExponentEnd}, p.z));
-  let lateral = (superRadius(p.xy, halfSize, exponent) - 1.0) * min(halfSize.x, halfSize.y);
+  let lateral = (extendedRadius(p.xy, halfSize, horizontalExtension, exponent) - 1.0) * min(halfSize.x, halfSize.y);
   let top = p.z - faceHeight(p.xy, widthUnits);
   let bottom = -p.z;
   // These are molded fillet radii in the same continuous field.  The harder
@@ -189,7 +218,7 @@ fn cameraRay(pixel : vec2f, rect : vec4f) -> mat2x3f {
   let up = normalize(cross(right, forward));
   let uv = ((pixel - rect.xy) / rect.zw) * 2.0 - 1.0;
   let viewAspect = rect.z / max(rect.w, 1.0);
-  let spread = tan(scene.camera.w * 0.5);
+  let spread = tan(scene.camera.w * 0.5) / ${K.projectionScale};
   let direction = normalize(forward + right * uv.x * spread * viewAspect - up * uv.y * spread);
   return mat2x3f(origin, direction);
 }
@@ -220,7 +249,7 @@ fn srgbFromLinear(c : vec3f) -> vec3f {
 @fragment fn fragmentMain(input : VertexOut) -> @location(0) vec4f {
   let instance = instances[input.instanceIndex];
   if (instance.shape.w < 0.5) { discard; }
-  let ray = cameraRay(input.pixel, instance.rect);
+  let ray = cameraRay(input.pixel, instance.objectRect);
   let ro = ray[0];
   let rd = ray[1];
   let widthUnits = max(instance.shape.x, 0.35);
@@ -242,18 +271,20 @@ fn srgbFromLinear(c : vec3f) -> vec3f {
     // Camera-right is world -X and the molded legend's top points toward
     // world -Y. This object-space orientation keeps the texture upright while
     // the camera orbits; it is not a compensating screen-space transform.
-    let legendWidthUnits = min(widthUnits, 3.4);
+    // Match the 512x96 content-cell aspect exactly so CSS glyphs and icons
+    // retain their x/y proportions on the physical face.
+    let legendWidthUnits = 512.0 / 96.0;
     let surfaceUv = vec2f(0.5 - p.x / (${K.faceHalf * 2} * legendWidthUnits), 0.5 + p.y / ${K.faceHalf * 2});
     let atlasUv = instance.legendRect.xy + surfaceUv * instance.legendRect.zw;
     let inLegendSpan = step(abs(p.x), ${K.faceHalf} * legendWidthUnits);
-    let inFace = step(faceRadius(p.xy, widthUnits), 1.008) * step(0.32, n.z) * inLegendSpan;
+    let inFace = step(faceBoundaryRadius(p.xy, widthUnits), 1.008) * step(0.32, n.z) * inLegendSpan;
     let hasLegend = step(0.000001, instance.legendRect.z * instance.legendRect.w);
     let incidence = max(dot(n, viewDirection), 0.05);
     let legendLod = clamp(log2(1.0 / incidence) * 0.9, 0.0, 2.0);
     let legendSample = textureSampleLevel(legendAtlas, legendSampler, atlasUv, legendLod);
-    let legendCoverage = legendSample.r * inFace * hasLegend;
+    let legendCoverage = legendSample.a * inFace * hasLegend;
     let plastic = linearFromSrgb(instance.color.rgb);
-    let legendInk = linearFromSrgb(instance.legendColor.rgb);
+    let legendInk = linearFromSrgb(legendSample.rgb);
     let base = mix(plastic, legendInk, legendCoverage);
     // Energy-conserving dielectric GGX over diffuse matte plastic.  The
     // vertical-shell term is indirect room/page bounce, evaluated from the

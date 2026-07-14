@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import MainLayout from "../../components/layouts/MainLayout";
 import KeycapSurface from "../../components/KeycapSurface";
+import KeycapLabel from "../../components/KeycapLabel";
 import {
   GitHubIcon,
   ExternalIcon,
@@ -221,9 +222,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                   className="btn btn-primary"
                 >
                   <KeycapSurface />
-                  <span className="btn-cap">
-                    <ExternalIcon /> Try {study.name} live
-                  </span>
+                  <KeycapLabel icon={<ExternalIcon />}>{`Try ${study.name} live`}</KeycapLabel>
                 </a>
                 <a
                   href={study.code}
@@ -232,9 +231,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                   className="btn btn-ghost"
                 >
                   <KeycapSurface />
-                  <span className="btn-cap">
-                    <GitHubIcon width={16} height={16} /> View the source
-                  </span>
+                  <KeycapLabel icon={<GitHubIcon />}>View the source</KeycapLabel>
                 </a>
               </>
             ) : (
@@ -245,9 +242,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                 className="btn btn-primary"
               >
                 <KeycapSurface />
-                <span className="btn-cap">
-                  <GitHubIcon width={16} height={16} /> View source on GitHub
-                </span>
+                <KeycapLabel icon={<GitHubIcon />}>View source on GitHub</KeycapLabel>
               </a>
             )}
           </div>
@@ -281,7 +276,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
               className="btn btn-primary"
             >
               <KeycapSurface />
-              <span className="btn-cap">Get in touch</span>
+              <KeycapLabel>Get in touch</KeycapLabel>
             </a>
           </div>
         </div>

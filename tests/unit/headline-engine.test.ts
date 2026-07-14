@@ -22,6 +22,7 @@ import {
     timingDelay,
 } from '../../lib/headline/policy';
 import {
+    expandRangeToWordBoundaries,
     graphemeBoundaries,
     normalizeGraphemeRange,
     previousGraphemeBoundary,
@@ -663,5 +664,33 @@ describe('headline engine primitives', () => {
         expect(
             transformFormattedDelete(range, [11, 12], affinity)
         ).toEqual({ range: [5, 11], affinity: { position: 11 } });
+    });
+
+    it('extends formatting when letters join a formatted word boundary', () => {
+        expect(transformFormattedInsert([0, 1], 1, 't', null)).toEqual({
+            range: [0, 2],
+            affinity: null,
+        });
+        expect(transformFormattedInsert([0, 1], 1, ' ', null)).toEqual({
+            range: [0, 1],
+            affinity: null,
+        });
+        expect(transformFormattedInsert([0, 1], 1, '?', null)).toEqual({
+            range: [0, 1],
+            affinity: null,
+        });
+    });
+
+    it('repairs formatting boundaries after a surrounding word rewrite', () => {
+        expect(expandRangeToWordBoundaries('steams?', [0, 1])).toEqual([0, 6]);
+        expect(expandRangeToWordBoundaries('support ?', [0, 8])).toEqual([
+            0, 7,
+        ]);
+        expect(expandRangeToWordBoundaries('serve teams', [6, 11])).toEqual([
+            6, 11,
+        ]);
+        expect(expandRangeToWordBoundaries('serve teams', [0, 5])).toEqual([
+            0, 5,
+        ]);
     });
 });

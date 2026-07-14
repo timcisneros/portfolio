@@ -412,12 +412,14 @@ const ActiveCard = memo(({
   card,
   direction,
   phase,
+  renderDiagram = true,
   onTransitionEnd,
   onNext,
 }: {
   card: ProjectLogicCard;
   direction: 1 | -1;
   phase: CardPhase;
+  renderDiagram?: boolean;
   onTransitionEnd?: () => void;
   onNext?: () => void;
 }) => (
@@ -438,7 +440,7 @@ const ActiveCard = memo(({
         <h2>{card.name}</h2>
       </header>
       <p className="hd-card-summary">{card.summary}</p>
-      {card.diagram}
+      {renderDiagram && card.diagram}
     </a>
     {onNext && (
       <button type="button" className="hd-card-next" onClick={onNext} aria-label="Show next project card">
@@ -546,6 +548,7 @@ const HeroDiagram = () => {
           card={CARDS[next]}
           direction={1}
           phase="preview"
+          renderDiagram={false}
         />
         {backing && (
           <ActiveCard
@@ -553,6 +556,7 @@ const HeroDiagram = () => {
             card={CARDS[backing.from]}
             direction={backing.direction}
             phase="behind"
+            renderDiagram={false}
           />
         )}
         {transition && (

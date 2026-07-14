@@ -36,3 +36,8 @@ for (const study of caseStudies) {
         await expectAccessible(page);
     });
 }
+
+test('HTML resume passes WCAG A/AA checks', async ({ page }) => {
+    await page.goto('/resume');
+    await expectAccessible(page);
+});

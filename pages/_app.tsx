@@ -1,17 +1,23 @@
 import type { AppProps } from 'next/app';
-import { Analytics } from '@vercel/analytics/react';
-import KeycapCameraControl from '../components/KeycapCameraControl';
-import KeycapCompositor from '../components/KeycapCompositor';
+import dynamic from 'next/dynamic';
+import DeferredAnalytics from '../components/DeferredAnalytics';
+import DeferredCameraControl from '../components/DeferredCameraControl';
+import { KEYCAP_RENDER_ENGINE_ENABLED } from '../lib/keycap/config';
+
+const KeycapCompositor = dynamic(
+    () => import('../components/KeycapCompositor'),
+    { ssr: false }
+);
 
 import '../styles/globals.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
         <>
-            <KeycapCompositor />
+            {KEYCAP_RENDER_ENGINE_ENABLED && <KeycapCompositor />}
             <Component {...pageProps} />
-            <KeycapCameraControl />
-            <Analytics />
+            <DeferredCameraControl />
+            <DeferredAnalytics />
         </>
     );
 }

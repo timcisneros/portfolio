@@ -12,7 +12,7 @@ import type {
 
 type GPU = any;
 
-const FLOATS_PER_INSTANCE = 20;
+const FLOATS_PER_INSTANCE = 24;
 const SCENE_BYTES = 80;
 const SOFTWARE_TILE_HEIGHT = 1024;
 const SOFTWARE_OBJECT_OVERFLOW = 256;
@@ -87,6 +87,7 @@ export class KeycapGpuEngine {
   async attach(canvas: HTMLCanvasElement, options: KeycapCompositorOptions = {}) {
     this.detach();
     this.canvas = canvas;
+    delete canvas.dataset.webgpuFailure;
     delete canvas.dataset.renderPresented;
     delete canvas.dataset.legendPresented;
     delete canvas.dataset.legendPending;
@@ -126,10 +127,15 @@ export class KeycapGpuEngine {
       attachedDevice.lost.then((info: { message?: string }) => {
         if (this.device !== attachedDevice) return;
         this.stopFrameLoop();
-        this.setStatus({ state: "lost", reason: info.message || "The WebGPU device was lost." });
+        const reason = info.message || "The WebGPU device was lost.";
+        if (this.canvas) this.canvas.dataset.webgpuFailure = reason;
+        const presentation = this.canvas;
+        this.context?.unconfigure?.();
+        this.context = null;
+        this.device = null;
+        if (presentation) this.attachSoftware(presentation);
+        else this.setStatus({ state: "lost", reason });
       });
-      this.context = canvas.getContext("webgpu") as GPU;
-      if (!this.context) throw new Error("Unable to create a GPUCanvasContext.");
       this.format = gpu.getPreferredCanvasFormat();
       this.sceneBuffer = this.device.createBuffer({
         label: "keycap-scene",
@@ -154,6 +160,12 @@ export class KeycapGpuEngine {
         },
         primitive: { topology: "triangle-list" },
       });
+      // A canvas can only ever vend one context mode. Delay claiming WebGPU
+      // until all fallible device/shader/pipeline work has succeeded so the
+      // software presentation path remains available after initialization
+      // failure.
+      this.context = canvas.getContext("webgpu") as GPU;
+      if (!this.context) throw new Error("Unable to create a GPUCanvasContext.");
       this.legendSampler = this.device.createSampler({
         label: "keycap-legend-sampler",
         magFilter: "linear",
@@ -170,7 +182,16 @@ export class KeycapGpuEngine {
       this.invalidate();
       return this.status;
     } catch (error) {
-      this.setStatus({ state: "unsupported", reason: error instanceof Error ? error.message : String(error) });
+      const reason = error instanceof Error ? error.message : String(error);
+      canvas.dataset.webgpuFailure = reason;
+      this.context?.unconfigure?.();
+      this.context = null;
+      this.device = null;
+      this.pipeline = null;
+      this.attachSoftware(canvas);
+      if (this.status.state !== "ready") {
+        this.setStatus({ state: "unsupported", reason: `WebGPU failed (${reason}); software renderer unavailable.` });
+      }
       return this.status;
     }
   }
@@ -224,6 +245,12 @@ export class KeycapGpuEngine {
           width: instance.rect.width,
           height: instance.rect.height,
         },
+        objectRect: instance.objectRect ? {
+          x: instance.objectRect.x - scrollX,
+          y: instance.objectRect.y - scrollY,
+          width: instance.objectRect.width,
+          height: instance.objectRect.height,
+        } : undefined,
       };
     }).filter((instance) => {
       if (instance.visible === false) return false;
@@ -237,9 +264,22 @@ export class KeycapGpuEngine {
   private attachSoftware(canvas: HTMLCanvasElement) {
     if (this.softwareTileHost && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function" && typeof Worker !== "undefined") {
       const worker = new Worker(new URL("./softwareWorker.ts", import.meta.url), { type: "module", name: "keycap-software-rasterizer" });
-      worker.onmessage = (event: MessageEvent<{ type: string; version: number; elapsed: number; scrollY: number }>) => {
-        if (event.data.type !== "presented" || worker !== this.softwareWorker || !this.canvas) return;
+      worker.onmessage = (event: MessageEvent<{ type: string; version: number; elapsed: number; scrollY: number; count?: number }>) => {
+        if (worker !== this.softwareWorker || !this.canvas) return;
+        if (event.data.type === "ready") this.canvas.dataset.softwareWorkerState = "ready";
+        if (event.data.type === "tiles-ready") this.canvas.dataset.softwareWorkerTiles = String(event.data.count ?? 0);
+        if (event.data.type === "render-received") this.canvas.dataset.softwareWorkerRender = String(event.data.version);
+        if (event.data.type === "visible-presented") {
+          this.revealSoftwarePresentation();
+          return;
+        }
+        if (event.data.type !== "presented") return;
         this.completeSoftwareFrame(event.data.version, event.data.elapsed, event.data.scrollY);
+      };
+      worker.onerror = (event) => {
+        if (worker !== this.softwareWorker || !this.canvas) return;
+        this.canvas.dataset.softwareWorkerState = "error";
+        this.canvas.dataset.softwareWorkerError = event.message || "Software worker failed to load.";
       };
       if (this.softwareAtlas) worker.postMessage({ type: "atlas", atlas: this.softwareAtlas });
       this.softwareWorker = worker;
@@ -336,8 +376,8 @@ export class KeycapGpuEngine {
   }
 
   /**
-   * Replaces the engine-wide coverage atlas. Glyphs and icons use the same
-   * alpha-mask contract and are mapped by each instance's `legendUv`.
+   * Replaces the engine-wide RGBA surface-content atlas. Text and original
+   * DOM icon paint are compiled from CSS and mapped by each instance's UV.
    */
   setLegendAtlasData(data: Uint8Array, width: number, height: number) {
     this.softwareAtlas = { data, width, height };
@@ -354,7 +394,7 @@ export class KeycapGpuEngine {
     const texture = this.device.createTexture({
       label: "keycap-legend-atlas",
       size: [Math.max(1, width), Math.max(1, height), 1],
-      format: "r8unorm",
+      format: "rgba8unorm",
       mipLevelCount: 3,
       usage: 0x04 | 0x02, // TEXTURE_BINDING | COPY_DST
     });
@@ -365,20 +405,24 @@ export class KeycapGpuEngine {
       this.device.queue.writeTexture(
         { texture, mipLevel },
         levelData,
-        { bytesPerRow: levelWidth, rowsPerImage: levelHeight },
+        { bytesPerRow: levelWidth * 4, rowsPerImage: levelHeight },
         [levelWidth, levelHeight, 1],
       );
       if (mipLevel < 2) {
         const nextWidth = levelWidth / 2;
         const nextHeight = levelHeight / 2;
-        const next = new Uint8Array(nextWidth * nextHeight);
+        const next = new Uint8Array(nextWidth * nextHeight * 4);
         for (let y = 0; y < nextHeight; y += 1) {
           for (let x = 0; x < nextWidth; x += 1) {
-            const source = (y * 2) * levelWidth + x * 2;
-            next[y * nextWidth + x] = Math.round((
-              levelData[source] + levelData[source + 1]
-              + levelData[source + levelWidth] + levelData[source + levelWidth + 1]
-            ) / 4);
+            const source = ((y * 2) * levelWidth + x * 2) * 4;
+            const destination = (y * nextWidth + x) * 4;
+            for (let channel = 0; channel < 4; channel += 1) {
+              next[destination + channel] = Math.round((
+                levelData[source + channel] + levelData[source + 4 + channel]
+                + levelData[source + levelWidth * 4 + channel]
+                + levelData[source + levelWidth * 4 + 4 + channel]
+              ) / 4);
+            }
           }
         }
         levelData = next;
@@ -429,10 +473,10 @@ export class KeycapGpuEngine {
     const texture = this.device.createTexture({
       label: "keycap-empty-legend-atlas",
       size: [1, 1, 1],
-      format: "r8unorm",
+      format: "rgba8unorm",
       usage: 0x04 | 0x02, // TEXTURE_BINDING | COPY_DST
     });
-    this.device.queue.writeTexture({ texture }, new Uint8Array([0]), { bytesPerRow: 1 }, [1, 1, 1]);
+    this.device.queue.writeTexture({ texture }, new Uint8Array([0, 0, 0, 0]), { bytesPerRow: 4 }, [1, 1, 1]);
     return texture;
   }
 
@@ -489,19 +533,26 @@ export class KeycapGpuEngine {
     visible.forEach((instance, index) => {
       const offset = index * FLOATS_PER_INSTANCE;
       const rect = instance.rect;
+      const objectRect = instance.objectRect ?? rect;
       const x = (rect.x - canvasRect.x) * dpr;
       const y = (rect.y - canvasRect.y) * dpr;
       data.set([x, y, rect.width * dpr, rect.height * dpr], offset);
-      data.set([...instance.material.color, 1], offset + 4);
-      const inferredUnits = clamp(rect.width / Math.max(rect.height, 1), 0.35, 12);
+      data.set([
+        (objectRect.x - canvasRect.x) * dpr,
+        (objectRect.y - canvasRect.y) * dpr,
+        objectRect.width * dpr,
+        objectRect.height * dpr,
+      ], offset + 4);
+      data.set([...instance.material.color, 1], offset + 8);
+      const inferredUnits = clamp(objectRect.width / Math.max(objectRect.height, 1), 0.35, 12);
       data.set([
         instance.widthUnits ?? inferredUnits,
         instance.material.roughness ?? 0.66,
         instance.material.ambient ?? 0.22,
         1,
-      ], offset + 8);
-      data.set(instance.legendUv ?? [0, 0, 0, 0], offset + 12);
-      data.set([...(instance.material.legendColor ?? [0.95, 0.95, 0.95]), 1], offset + 16);
+      ], offset + 12);
+      data.set(instance.legendUv ?? [0, 0, 0, 0], offset + 16);
+      data.set([...(instance.material.legendColor ?? [0.95, 0.95, 0.95]), 1], offset + 20);
     });
     this.device.queue.writeBuffer(this.instanceBuffer, 0, data);
 
@@ -584,7 +635,8 @@ export class KeycapGpuEngine {
         height: this.softwareDocumentHeight,
         dpr,
         pixelStep: this.softwarePixelStep,
-        scrollY: 0,
+        scrollY: window.scrollY,
+        viewportHeight: window.innerHeight,
         camera: this.camera,
         instances,
       });
@@ -609,10 +661,7 @@ export class KeycapGpuEngine {
     this.canvas.dataset.presentedScrollY = String(scrollY);
     this.frame += 1;
     this.submissions += 1;
-    if (visible.length > 0 && this.canvas.dataset.renderPresented !== "true") {
-      this.canvas.dataset.renderPresented = "true";
-      this.canvas.dispatchEvent(new CustomEvent("keycap-frame-presented"));
-    }
+    if (visible.length > 0) this.revealSoftwarePresentation();
     if (visible.length > 0 && this.canvas.dataset.legendPending === "true") {
       delete this.canvas.dataset.legendPending;
       this.canvas.dataset.legendPresented = "true";
@@ -620,6 +669,12 @@ export class KeycapGpuEngine {
     }
     this.canvas.dispatchEvent(new CustomEvent("keycap-frame-committed", { detail: { scrollY } }));
     if (this.options.continuous) this.invalidate();
+  }
+
+  private revealSoftwarePresentation() {
+    if (!this.canvas || this.canvas.dataset.renderPresented === "true") return;
+    this.canvas.dataset.renderPresented = "true";
+    this.canvas.dispatchEvent(new CustomEvent("keycap-frame-presented"));
   }
 }
 
