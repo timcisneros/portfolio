@@ -3,7 +3,8 @@
 Full-stack software developer building applications that automate operational
 work. I work across TypeScript, React, Vue.js, Node.js, SQL, and AWS, with an
 emphasis on inspectable systems, reliable workflows, and tools people can use
-on the job.
+on the job. Through TimCis Media, I run an independent software-development and
+digital-production practice delivering and maintaining client applications.
 
 ## Selected engineering work
 

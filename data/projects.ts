@@ -303,7 +303,7 @@ export const experience: Job[] = [
     company: "TimCis Media",
     period: "Mar 2020 – Present",
     location: "California",
-    context: "Independent freelance and part-time business spanning client software development and digital production",
+    context: "Independent software-development and digital-production practice (freelance / part-time business)",
     bullets: [
       "Translate client operating procedures into maintained internal applications using React, MongoDB / Express, and AWS serverless workflows across API Gateway, Step Functions, Lambda, and DynamoDB.",
       "Own delivery from workflow discovery through interfaces, APIs, data models, release, and ongoing changes, keeping implementation decisions tied to the work users perform on the job.",
