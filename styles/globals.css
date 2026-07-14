@@ -2452,12 +2452,32 @@ a {
 
 .ai-card-file {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-end;
+  gap: 6px;
+  align-self: flex-start;
   margin-top: 18px;
   font-family: var(--mono);
   font-size: 0.78rem;
+  line-height: 1.5;
   color: var(--accent-ink);
+}
+
+.ai-card-file-path {
+  min-width: 0;
+}
+
+.ai-card-file-path > span {
+  display: block;
+  white-space: nowrap;
+}
+
+.ai-card-file-path > span:first-child {
+  color: var(--text-faint);
+}
+
+.ai-card-file > svg {
+  flex: 0 0 auto;
+  margin-bottom: 0.15em;
 }
 
 /* ---------- Experience ---------- */

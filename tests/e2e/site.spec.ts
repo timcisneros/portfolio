@@ -25,6 +25,37 @@ test('homepage renders every section', async ({ page }) => {
     await expect(page.locator('.proof-grid')).toContainText('Two promotions');
     await expect(page.locator('.proof-grid')).toContainText('Enterprise delivery');
     await expect(page.locator('.skill-level')).toHaveCount(4);
+    const engineeringSourceLinks = page.locator('#ai .ai-card-file');
+    await expect(engineeringSourceLinks).toHaveCount(3);
+    const engineeringSourceLayout = await engineeringSourceLinks.evaluateAll(
+        (links) =>
+            links.map((link) => {
+                const card = link.closest<HTMLElement>('.ai-card')!;
+                const pathLines = Array.from(
+                    link.querySelectorAll<HTMLElement>('.ai-card-file-path > span')
+                );
+                return {
+                    fitsCard:
+                        link.getBoundingClientRect().right <=
+                        card.getBoundingClientRect().right,
+                    pathLines: pathLines.map((line) => ({
+                        display: getComputedStyle(line).display,
+                        whiteSpace: getComputedStyle(line).whiteSpace,
+                    })),
+                };
+            })
+    );
+    expect(
+        engineeringSourceLayout.every(
+            ({ fitsCard, pathLines }) =>
+                fitsCard &&
+                pathLines.length === 2 &&
+                pathLines.every(
+                    ({ display, whiteSpace }) =>
+                        display === 'block' && whiteSpace === 'nowrap'
+                )
+        )
+    ).toBe(true);
     const quietContactLinks = page.locator('#contact .contact-links');
     await expect(quietContactLinks.getByRole('link')).toHaveCount(2);
     await expect(

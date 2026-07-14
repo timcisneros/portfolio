@@ -265,7 +265,11 @@ function Home() {
                 ledger for every external effect. Nothing executes off-ledger.
               </p>
               <span className="ai-card-file">
-                ticket-system/OPERATOR_CONTRACT.md <ArrowRightIcon />
+                <span className="ai-card-file-path">
+                  <span>ticket-system/</span>
+                  <span>OPERATOR_CONTRACT.md</span>
+                </span>
+                <ArrowRightIcon />
               </span>
             </a>
             <a
@@ -282,7 +286,11 @@ function Home() {
                 edge cases.
               </p>
               <span className="ai-card-file">
-                ticket-system/scripts/*-benchmark.js <ArrowRightIcon />
+                <span className="ai-card-file-path">
+                  <span>ticket-system/</span>
+                  <span>scripts/*-benchmark.js</span>
+                </span>
+                <ArrowRightIcon />
               </span>
             </a>
             <a
@@ -297,7 +305,11 @@ function Home() {
                 endurance, and regression checks before they are accepted.
               </p>
               <span className="ai-card-file">
-                ticket-system/scripts/codex-verify.js <ArrowRightIcon />
+                <span className="ai-card-file-path">
+                  <span>ticket-system/</span>
+                  <span>scripts/codex-verify.js</span>
+                </span>
+                <ArrowRightIcon />
               </span>
             </a>
           </div>
