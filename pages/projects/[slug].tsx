@@ -15,6 +15,12 @@ import {
 import { caseStudies, getCaseStudy } from "../../data/caseStudies";
 import type { CaseStudy as CaseStudyData } from "../../data/caseStudies";
 import { renderInline } from "../../components/richText";
+import {
+  DeferredCarToy,
+  DeferredLaunchpadToy,
+  DeferredOscilloscopeToy,
+} from "../../components/secrets/DeferredSecrets";
+import { isSecretToyEnabled } from "../../lib/secretToys";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
@@ -43,6 +49,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
 
   return (
     <MainLayout
+      key={study.slug}
       title={`${study.name} | Tim Cisneros`}
       description={study.tagline}
       ogTitle={study.name}
@@ -148,6 +155,22 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
         </div>
       </section>
 
+      {study.slug === "dsdebug" && isSecretToyEnabled("oscilloscope") && (
+        <div id="toy-oscilloscope" className="section cs-secret-toy">
+          <div className="container">
+            <DeferredOscilloscopeToy />
+          </div>
+        </div>
+      )}
+
+      {study.slug === "my-youtube" && isSecretToyEnabled("launchpad") && (
+        <div id="toy-launchpad" className="section cs-secret-toy">
+          <div className="container">
+            <DeferredLaunchpadToy />
+          </div>
+        </div>
+      )}
+
       {study.deepDive && (
         <section className="section cs-deepdive">
           <div className="container">
@@ -204,7 +227,7 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
         </section>
       )}
 
-      <section className="section">
+      <section className="section cs-build-section">
         <div className="container">
           <p className="section-label">How it&apos;s built</p>
           <ul className="cs-build">
@@ -247,6 +270,13 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
             )}
           </div>
 
+          <div id="project-car" className="cs-car-navigation" data-car-grip="1.06" data-car-rolling-resistance="0.96">
+            <DeferredCarToy
+              leftExitHref={prev ? `/projects/${prev.slug}` : "/#toy-car"}
+              rightExitHref={next ? `/projects/${next.slug}` : "/#toy-car"}
+            />
+          </div>
+
           {(prev || next) && (
             <nav className="cs-pager" aria-label="More case studies">
               {prev ? (
@@ -254,14 +284,18 @@ const CaseStudy = ({ study }: { study: CaseStudyData }) => {
                   <ArrowLeftIcon /> {prev.name}
                 </Link>
               ) : (
-                <span />
+                <Link href="/#toy-car" className="cs-pager-prev">
+                  <ArrowLeftIcon /> Home
+                </Link>
               )}
               {next ? (
                 <Link href={`/projects/${next.slug}`} className="cs-pager-next">
                   {next.name} <ArrowRightIcon />
                 </Link>
               ) : (
-                <span />
+                <Link href="/#toy-car" className="cs-pager-next">
+                  Home <ArrowRightIcon />
+                </Link>
               )}
             </nav>
           )}

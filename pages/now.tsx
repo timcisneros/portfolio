@@ -11,6 +11,8 @@ import {
 } from "../components/Icons";
 import KeycapLabel from "../components/KeycapLabel";
 import KeycapSurface from "../components/KeycapSurface";
+import { DeferredRadioToy } from "../components/secrets/DeferredSecrets";
+import { isSecretToyEnabled } from "../lib/secretToys";
 import styles from "./Now.module.css";
 
 const OPEN_SAUCE_EMAIL =
@@ -80,6 +82,12 @@ function Now() {
             </li>
           </ul>
         </section>
+
+        {isSecretToyEnabled("radio") && (
+          <div id="toy-radio" className={"container " + styles.radio}>
+            <DeferredRadioToy />
+          </div>
+        )}
 
         <section
           className={`container ${styles.exchange}`}

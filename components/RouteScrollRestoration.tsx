@@ -4,7 +4,6 @@ import Router from 'next/router';
 const STORAGE_PREFIX = 'portfolio-scroll:';
 
 type ScrollPosition = {
-    x: number;
     y: number;
 };
 
@@ -17,7 +16,7 @@ const savePosition = (key: string) => {
     try {
         sessionStorage.setItem(
             `${STORAGE_PREFIX}${key}`,
-            JSON.stringify({ x: window.scrollX, y: window.scrollY })
+            JSON.stringify({ y: window.scrollY })
         );
     } catch {
         // Storage can be unavailable in hardened browsing modes. Native
@@ -30,19 +29,19 @@ const readPosition = (key: string): ScrollPosition | null => {
         const value = sessionStorage.getItem(`${STORAGE_PREFIX}${key}`);
         if (!value) return null;
         const position = JSON.parse(value) as Partial<ScrollPosition>;
-        return typeof position.x === 'number' && typeof position.y === 'number'
-            ? { x: position.x, y: position.y }
+        return typeof position.y === 'number'
+            ? { y: position.y }
             : null;
     } catch {
         return null;
     }
 };
 
-const restorePosition = ({ x, y }: ScrollPosition) => {
+const restorePosition = ({ y }: ScrollPosition) => {
     const root = document.documentElement;
     const previousBehavior = root.style.scrollBehavior;
     root.style.scrollBehavior = 'auto';
-    window.scrollTo(x, y);
+    window.scrollTo(0, y);
     root.style.scrollBehavior = previousBehavior;
 };
 

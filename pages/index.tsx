@@ -11,6 +11,8 @@ import { renderInline } from "../components/richText";
 import FeaturedProject from "../components/FeaturedProject";
 import ProjectCard from "../components/ProjectCard";
 import DeferredContactForm from "../components/DeferredContactForm";
+import { DeferredCarToy } from "../components/secrets/DeferredSecrets";
+import { CASE_STUDY_ORDER } from "../data/caseStudyOrder";
 import {
   GitHubIcon,
   MailIcon,
@@ -315,6 +317,15 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <div id="toy-car" className="secret-car-lane" data-car-grip="1.06" data-car-rolling-resistance="0.96">
+        <div className="container">
+          <DeferredCarToy
+            leftExitHref={`/projects/${CASE_STUDY_ORDER[CASE_STUDY_ORDER.length - 1]}`}
+            rightExitHref={`/projects/${CASE_STUDY_ORDER[0]}`}
+          />
+        </div>
+      </div>
 
       <section id="about" className="section">
         <div className="container">

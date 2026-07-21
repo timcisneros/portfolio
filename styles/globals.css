@@ -212,9 +212,16 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 88px;
+  /* The site has no horizontal navigation. Reserve the vertical scrollbar
+     across route lengths and clip transient off-canvas toys so neither can
+     change the inline viewport while navigating. */
+  scrollbar-gutter: stable;
+  overflow-x: clip;
 }
 
 body {
+  min-width: 0;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -2955,10 +2962,54 @@ a {
   background: #ffffff;
 }
 
+.cs-secret-toy {
+  padding-top: 18px;
+  padding-bottom: 18px;
+  /* This row owns an IntersectionObserver-based lazy boundary already.
+     Nesting it inside the generic section content-visibility estimate can
+     suppress that observer on narrow viewports and reserve a 760px gap. */
+  content-visibility: visible;
+  contain-intrinsic-block-size: none;
+}
+
+.secret-car-lane {
+  padding: 0;
+}
+
+/* Reserve the eventual Easter-egg scene without pulling its interactive
+   stylesheet or Zdog into the initial route. */
+.secret-deferred {
+  width: 100%;
+  min-width: 0;
+}
+
+.secret-deferred-car {
+  min-height: 154px;
+}
+
+
+.secret-deferred-radio,
+.secret-deferred-launchpad,
+.secret-deferred-oscilloscope {
+  min-height: 210px;
+}
+
+.secret-placeholder {
+  min-height: inherit;
+}
+
 .cs-build {
   list-style: none;
   max-width: 720px;
   margin-bottom: 48px;
+}
+
+/* A driving car renders in a fixed, page-anchored layer. This section must
+   not establish the paint containment normally used for deferred sections. */
+.cs-build-section {
+  content-visibility: visible;
+  contain: none;
+  contain-intrinsic-block-size: none;
 }
 
 .cs-build li {
@@ -3082,6 +3133,13 @@ a {
   padding-top: 40px;
   border-top: 1px solid var(--border);
 }
+
+.cs-car-navigation {
+  position: relative;
+  min-height: 154px;
+  margin-top: 40px;
+}
+
 
 .cs-pager a {
   display: inline-flex;

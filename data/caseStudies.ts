@@ -1,3 +1,5 @@
+import { CASE_STUDY_ORDER } from './caseStudyOrder';
+
 export interface CaseStudyStep {
     title: string;
     body: string;
@@ -566,16 +568,6 @@ const CASE_STUDIES: CaseStudy[] = [
             'Diagnostics never modify anything: probes don\'t write to the registry, don\'t reconfigure the prefix, and leave the session running.',
         ],
     },
-];
-
-const CASE_STUDY_ORDER = [
-    'dsdebug',
-    'entity-visualization',
-    'my-youtube',
-    'ticket-system',
-    'action-plan',
-    'stringing-report',
-    'waydaw',
 ];
 
 export const caseStudies = [...CASE_STUDIES].sort(

@@ -92,6 +92,10 @@
   margin-top: 104px;
 }
 
+.radio {
+  margin-top: 96px;
+}
+
 .exchangeInner {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
@@ -171,7 +175,8 @@
   }
 
   .current,
-  .exchange {
+  .exchange,
+  .radio {
     margin-top: 76px;
   }
 
