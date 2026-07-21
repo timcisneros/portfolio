@@ -42,3 +42,6 @@ yarn-error.log*
 
 # local visual-design and rejected-capture references
 /reference/
+
+# quarantined source recordings; only audited derivatives belong in public/audio
+/.engine-audio-source/

@@ -10,6 +10,8 @@
         "build": "next build",
         "start": "next start",
         "resume:build": "sh scripts/generate-resume.sh",
+        "audio:audit": "node scripts/audit-engine-audio.mjs",
+        "audio:source:audit": "node scripts/audit-engine-source.mjs",
         "typecheck": "tsc --noEmit",
         "test": "vitest run tests/unit",
         "test:e2e": "playwright test",
@@ -25,7 +27,8 @@
         "@vercel/og": "^0.11.1",
         "next": "^16.2.10",
         "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react-dom": "^19.2.7",
+        "zdog": "^1.1.3"
     },
     "overrides": {
         "postcss": "^8.5.10"
@@ -36,6 +39,7 @@
         "@types/node": "^26.1.1",
         "@types/react": "^19.2.17",
         "@types/react-dom": "^19.2.3",
+        "@types/zdog": "^1.1.7",
         "typescript": "^5.9.3",
         "vitest": "^4.1.10"
     }

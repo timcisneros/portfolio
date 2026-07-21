@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "status": "candidate",
+  "source": {
+    "title": "Original source collection title",
+    "creator": "Source creator",
+    "sourceUrl": "https://example.com/original-source",
+    "rights": {
+      "licenseId": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "commercialUse": true,
+      "derivatives": true,
+      "redistribution": true,
+      "attribution": "Optional for CC0; required for CC-BY-4.0"
+    }
+  },
+  "recording": {
+    "vehicle": "Year, make, and model",
+    "engine": "Displacement, fuel, aspiration, and cylinder configuration",
+    "transmission": "Transmission type and ratio count used during capture",
+    "captureEnvironment": "Location, hood state, and relevant room or road conditions",
+    "microphonePerspectives": {
+      "exterior": "Fixed exterior microphone position",
+      "intake": "Fixed intake microphone position",
+      "exhaust": "Fixed exhaust microphone position"
+    },
+    "rpmEvidence": "source-rpm-metadata",
+    "loadEvidence": "source-rpm-torque-metadata"
+  },
+  "calibration": {
+    "evidenceKind": "manufacturer-specification",
+    "evidenceUrl": "https://example.com/manufacturer-technical-specification",
+    "idleRpm": 850,
+    "maximumRpm": 4700,
+    "maximumPowerKw": 96,
+    "maximumPowerRpm": 3750,
+    "maximumTorqueNm": 300,
+    "maximumTorqueRpm": 1750
+  },
+  "programs": [
+    {
+      "label": "light",
+      "normalizedLoad": 0.25,
+      "bands": [
+        {
+          "rpm": 1200,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "light-1200-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "light-1200-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "light-1200-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        },
+        {
+          "rpm": 2400,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "light-2400-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "light-2400-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "light-2400-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        },
+        {
+          "rpm": 3900,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "light-3900-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "light-3900-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "light-3900-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        }
+      ]
+    },
+    {
+      "label": "full",
+      "normalizedLoad": 1,
+      "bands": [
+        {
+          "rpm": 1200,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "full-1200-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "full-1200-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "full-1200-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        },
+        {
+          "rpm": 2400,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "full-2400-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "full-2400-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "full-2400-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        },
+        {
+          "rpm": 3900,
+          "steadyStartSeconds": 1.5,
+          "steadyEndSeconds": 6.5,
+          "stems": {
+            "exterior": { "file": "full-3900-exterior.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "intake": { "file": "full-3900-intake.wav", "sha256": "replace-with-the-original-file-sha256-digest" },
+            "exhaust": { "file": "full-3900-exhaust.wav", "sha256": "replace-with-the-original-file-sha256-digest" }
+          }
+        }
+      ]
+    }
+  ],
+  "lifecycle": {
+    "startup": {
+      "file": "startup.wav",
+      "sha256": "replace-with-the-original-file-sha256-digest",
+      "startSeconds": 0,
+      "endSeconds": 3
+    },
+    "shutdown": {
+      "file": "shutdown.wav",
+      "sha256": "replace-with-the-original-file-sha256-digest",
+      "startSeconds": 0,
+      "endSeconds": 2.5
+    }
+  },
+  "transients": [
+    {
+      "kind": "throttle-tip-in",
+      "file": "throttle-tip-in.wav",
+      "sha256": "replace-with-the-original-file-sha256-digest",
+      "startSeconds": 0,
+      "endSeconds": 1
+    },
+    {
+      "kind": "overrun-fuel-cut",
+      "file": "overrun-fuel-cut.wav",
+      "sha256": "replace-with-the-original-file-sha256-digest",
+      "startSeconds": 0,
+      "endSeconds": 1
+    },
+    {
+      "kind": "shift-torque-release",
+      "file": "shift-torque-release.wav",
+      "sha256": "replace-with-the-original-file-sha256-digest",
+      "startSeconds": 0,
+      "endSeconds": 1
+    }
+  ]
+}
