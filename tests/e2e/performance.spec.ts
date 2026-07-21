@@ -51,7 +51,11 @@ test("homepage stays within runtime stability budgets", async ({ page }) => {
 
   await page.goto("/");
   await page.waitForTimeout(2200);
-  await page.locator("#contact").scrollIntoViewIfNeeded();
+  // Use trusted input so the Layout Instability API treats this as the user's
+  // intentional viewport change rather than counting a programmatic page jump
+  // as unexpected layout shift.
+  await page.keyboard.press("End");
+  await expect(page.locator("#contact")).toBeInViewport();
   await expect(page.locator(".btn-coral .keycap-fallback-content")).toBeVisible();
   await page.waitForTimeout(500);
 

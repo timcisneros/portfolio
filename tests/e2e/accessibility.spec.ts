@@ -50,3 +50,20 @@ test('HTML resume passes WCAG A/AA checks', async ({ page }) => {
     await page.goto('/resume');
     await expectAccessible(page);
 });
+
+const interactiveSecrets = [
+    ['homepage car', '/', '#toy-car'],
+    ['Now-page radio', '/now', '#toy-radio'],
+    ['YouTube sample pad', '/projects/my-youtube', '#toy-launchpad'],
+    ['DSDebug oscilloscope', '/projects/dsdebug', '#toy-oscilloscope'],
+] as const;
+
+for (const [name, path, selector] of interactiveSecrets) {
+    test(`${name} passes WCAG A/AA checks after it is revealed`, async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
+        await page.goto(path);
+        await page.locator(selector).scrollIntoViewIfNeeded();
+        await expect(page.locator(`${selector} canvas`)).toBeVisible();
+        await expectAccessible(page);
+    });
+}
