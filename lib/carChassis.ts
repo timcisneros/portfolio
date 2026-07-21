@@ -3963,7 +3963,7 @@ export function stepCarChassis(
     wheelRestEnergySpeed * 0.35,
   );
   if (
-    (parking || serviceBraking)
+    (parking || serviceBraking || demandedDirection === 0)
     && state.restState !== "held"
     && restEnergySpeed > 0
     && restEnergySpeed < restSettleSpeedPixels * 1.8

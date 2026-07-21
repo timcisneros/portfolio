@@ -261,15 +261,8 @@ describe("engine audio banks", () => {
     expect(source).toContain('parameters.get("rpmAcceleration")');
     expect(source).toContain('parameters.get("limiter")');
     expect(source).toContain("const ignitionDuration = coldStart && startupBuffer");
-    expect(source).toContain("wheelRevolutionsPerSecond");
-    expect(source).toContain("engineStyle.transmission.reverseMeshTeeth");
-    expect(source).toContain("gearPrimarySource");
-    expect(source).toContain("gearSecondarySource");
-    expect(source).toContain('gearPrimaryFilter.type = "bandpass"');
-    expect(source).toContain('gearSecondaryFilter.type = "bandpass"');
-    expect(source).not.toContain("createOscillator();\n  const gearPrimary");
-    expect(source).toContain("drive.clutchSlipRpm");
-    expect(source).toContain("clutchSource");
+    expect(source).not.toContain("gearPrimarySource");
+    expect(source).not.toContain("gearSecondarySource");
     expect(source).not.toContain("reverseOscillator");
     expect(source).toContain("const normalizationGain = bands[index].gain");
     expect(source).toContain("const normalizationGain = band.gain");

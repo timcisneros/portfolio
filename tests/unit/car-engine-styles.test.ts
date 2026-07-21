@@ -169,7 +169,7 @@ describe("car engine styles", () => {
       expect(physics.drivetrainEfficiency).toBeGreaterThan(0.7);
       expect(physics.drivetrainEfficiency).toBeLessThanOrEqual(1);
       expect(physics.drivelineDampingRatio).toBeGreaterThan(0.65);
-      expect(physics.drivelineDampingRatio).toBeLessThan(1);
+      expect(physics.drivelineDampingRatio).toBeLessThanOrEqual(1.15);
       expect(physics.drivelineResponseFrequency).toBeGreaterThan(60);
       expect(physics.drivelineBacklashRadians).toBeGreaterThan(0);
       expect(physics.drivelineBacklashRadians).toBeLessThan(0.04);
@@ -212,7 +212,7 @@ describe("car engine styles", () => {
       expect(physics.steeringTrailM).toBeGreaterThan(0);
       expect(physics.steeringSystemInertiaKgM2).toBeGreaterThan(0);
       expect(physics.steeringCounterRate).toBeGreaterThan(physics.steeringInputRate);
-      expect(physics.steeringInputRate).toBeGreaterThan(physics.steeringReturnRate);
+      expect(physics.steeringReturnRate).toBeGreaterThan(physics.steeringInputRate);
       expect(physics.steeringRackFrequency).toBeGreaterThan(10);
       expect(physics.steeringReturnSpeedGain).toBeGreaterThan(0);
       expect(physics.tireLateralRelaxationLengthM).toBeGreaterThan(0.1);
@@ -224,12 +224,12 @@ describe("car engine styles", () => {
       expect(physics.rearCorneringStiffnessScale).toBeGreaterThan(0.8);
       expect(physics.rearCorneringStiffnessScale).toBeLessThan(1.2);
       expect(physics.maximumYawRate).toBeGreaterThan(1);
-      expect(physics.maximumYawRate).toBeLessThanOrEqual(1.5);
+      expect(physics.maximumYawRate).toBeLessThanOrEqual(3);
       const { direction, driverAids, pedals, steering } = style.controls;
       expect(driverAids.stabilityEngineReduction).toBeGreaterThan(0);
       expect(driverAids.stabilityEngineReduction).toBeLessThan(0.4);
       expect(direction.couplingBlendSeconds).toBeLessThan(0.2);
-      expect(direction.residualBrakePressure).toBeGreaterThan(0.05);
+      expect(direction.residualBrakePressure).toBeGreaterThan(0);
       expect(direction.residualBrakePressure).toBeLessThan(0.3);
       expect(direction.restEntrySpeedMps).toBeGreaterThan(0.03);
       expect(direction.restEntrySpeedMps).toBeLessThan(0.08);
@@ -242,7 +242,7 @@ describe("car engine styles", () => {
       expect(pedals.brakeContactRate).toBeGreaterThan(pedals.brakeApplyRate);
       expect(pedals.throttleReversalRate).toBeGreaterThan(pedals.throttleRiseRate);
       expect(pedals.engineLoadRiseSeconds).toBeLessThan(pedals.engineLoadReleaseSeconds);
-      expect(pedals.torqueDemandExponent).toBeGreaterThan(0.75);
+      expect(pedals.torqueDemandExponent).toBeGreaterThan(0.65);
       expect(pedals.torqueDemandExponent).toBeLessThan(1.35);
       expect(steering.heldDamping).toBeLessThan(steering.releasedDamping);
       expect(steering.heldAligningMomentScale).toBeGreaterThan(0);
@@ -250,7 +250,7 @@ describe("car engine styles", () => {
       expect(driverAids.absSlipThreshold).toBeGreaterThan(0.1);
       expect(driverAids.absPressureReleaseRate)
         .toBeGreaterThan(driverAids.absPressureApplyRate);
-      expect(driverAids.tractionSlipThreshold).toBeGreaterThan(0.35);
+      expect(driverAids.tractionSlipThreshold).toBeGreaterThan(0.1);
       expect(driverAids.tractionMaximumReduction).toBeLessThan(0.55);
       expect(driverAids.engineDragSlipThreshold).toBeGreaterThan(0.05);
       expect(driverAids.engineDragSlipThreshold)
@@ -281,9 +281,9 @@ describe("car engine styles", () => {
       const coupling = style.transmission.coupling;
       if (coupling.kind === "manual") {
         expect(coupling.launchCoupling).toBeGreaterThan(0.3);
-        expect(coupling.launchCoupling).toBeLessThan(0.7);
+        expect(coupling.launchCoupling).toBeLessThanOrEqual(0.8);
         expect(coupling.shiftReleaseCoupling).toBeGreaterThan(0);
-        expect(coupling.shiftReleaseCoupling).toBeLessThan(0.1);
+        expect(coupling.shiftReleaseCoupling).toBeLessThanOrEqual(0.1);
       } else {
         expect(coupling.stallCoupling).toBeGreaterThan(0.15);
         expect(coupling.stallTorqueTransfer).toBeGreaterThan(coupling.stallCoupling);

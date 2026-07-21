@@ -267,6 +267,7 @@ function buildDiagnostics(
     forceResidualRatio: forceResidualNewtons / Math.max(
       36,
       Math.abs(appliedWheelForceNewtons),
+      Math.abs(appliedWheelForceNewtons) + forceResidualNewtons,
     ),
   };
 }

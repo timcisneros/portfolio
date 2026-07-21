@@ -1422,10 +1422,8 @@ export function updateCarDrivetrain(
     && pedalDemand > 0.025
     ? Math.max(0, gearboxInputTorqueNm)
     : Math.min(0, gearboxInputTorqueNm);
-  const reverseSpeedTaper = smoothstep(0.08, 0.82, speed);
   const reverseDriveAuthority = direction < 0 && deliveredGearboxInputTorqueNm > 0
     ? style.physics.reverseTorqueAuthority
-      + (1 - style.physics.reverseTorqueAuthority) * (1 - reverseSpeedTaper)
     : 1;
   const preliminaryWheelForceNewtons = direction * deliveredGearboxInputTorqueNm
     * mechanicalReduction / Math.max(0.1, style.physics.wheelRadiusM);
@@ -1448,12 +1446,15 @@ export function updateCarDrivetrain(
       / Math.max(0.1, style.physics.wheelRadiusM);
   // With no key held the driveline is passive: it may absorb existing road
   // motion, but neither idle control nor stored shaft twist may launch the car.
-  const wheelForceNewtons = propulsionRequested
+  const resolvedWheelForceNewtons = propulsionRequested
     ? requestedWheelForceNewtons
     : Math.abs(signedSpeed) > 0.001
         && requestedWheelForceNewtons * signedSpeed < 0
       ? requestedWheelForceNewtons
       : 0;
+  const wheelForceNewtons = resolvedWheelForceNewtons === 0
+    ? 0
+    : resolvedWheelForceNewtons;
   const state: CarDrivetrainState = {
     clutch,
     lockup,

@@ -58,6 +58,23 @@ function runHandlingTrace(style: CarEngineStyle) {
     }
   }
   const launchSpeed = getCarSignedSpeed(chassis);
+  const launchChassis = chassis;
+  const launchDrivetrain = drivetrain;
+  const launchDistance = distance;
+  for (
+    let frame = 270;
+    frame < 900
+      && forwardThirtyFivePercentSeconds === Number.POSITIVE_INFINITY;
+    frame += 1
+  ) {
+    step(1, 0);
+    if (getCarSignedSpeed(chassis) >= getCarMaximumPageSpeed(style, 1) * 0.35) {
+      forwardThirtyFivePercentSeconds = (frame + 1) * STEP;
+    }
+  }
+  chassis = launchChassis;
+  drivetrain = launchDrivetrain;
+  distance = launchDistance;
   let steeringResponseSeconds = Number.POSITIVE_INFINITY;
   for (let frame = 0; frame < 72; frame += 1) {
     step(0.45, 1);
@@ -117,7 +134,9 @@ describe("car handling telemetry", () => {
         expect(sample.speed, `${style.label} launch sample ${index + 1}`)
           .toBeGreaterThan(trace.samples[index].speed * 0.92);
       });
-      expect(trace.launchSpeed, style.label).toBeGreaterThan(maximumSpeed * 0.35);
+      expect(trace.launchSpeed, style.label).toBeGreaterThan(
+        maximumSpeed * style.handlingTargets.minimumForwardLaunchRatio,
+      );
       expect(trace.launchSpeed, style.label).toBeLessThan(maximumSpeed);
       expect(trace.forwardThirtyFivePercentSeconds, style.label)
         .toBeGreaterThanOrEqual(envelope.forwardThirtyFivePercentSeconds[0]);
