@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { caseStudies } from '../../data/caseStudies';
+import {
+    SECRET_TOY_ENABLED,
+    type SecretToyKind,
+} from '../../lib/secretToys';
 
 const auditedTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -52,13 +56,19 @@ test('HTML resume passes WCAG A/AA checks', async ({ page }) => {
 });
 
 const interactiveSecrets = [
-    ['homepage car', '/', '#toy-car'],
-    ['Now-page radio', '/now', '#toy-radio'],
-    ['YouTube sample pad', '/projects/my-youtube', '#toy-launchpad'],
-    ['DSDebug oscilloscope', '/projects/dsdebug', '#toy-oscilloscope'],
-] as const;
+    ['car', 'homepage car', '/', '#toy-car'],
+    ['radio', 'Now-page radio', '/now', '#toy-radio'],
+    ['launchpad', 'YouTube sample pad', '/projects/my-youtube', '#toy-launchpad'],
+    ['oscilloscope', 'DSDebug oscilloscope', '/projects/dsdebug', '#toy-oscilloscope'],
+] as const satisfies readonly (readonly [
+    SecretToyKind,
+    string,
+    string,
+    string,
+])[];
 
-for (const [name, path, selector] of interactiveSecrets) {
+for (const [kind, name, path, selector] of interactiveSecrets) {
+    if (!SECRET_TOY_ENABLED[kind]) continue;
     test(`${name} passes WCAG A/AA checks after it is revealed`, async ({ page }) => {
         await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
         await page.goto(path);
